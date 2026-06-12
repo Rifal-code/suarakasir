@@ -1,24 +1,27 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #FF5A2C;
-  --color-primary-hover: #FF6A42;
-  --color-primary-active: #E84A1D;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-info: #3B82F6;
-  --color-background: #F5F6F8;
+  /* Palette: #FF3F1A, #97D6DF, #E2EEF0, #FFFFFF, #F4F4F4, #191718 */
+  --color-primary: #FF3F1A;
+  --color-primary-hover: color-mix(in srgb, #FF3F1A 85%, black);
+  --color-primary-active: color-mix(in srgb, #FF3F1A 70%, black);
+  
+  --color-success: #97D6DF;
+  --color-warning: #FF3F1A;
+  --color-danger: #FF3F1A;
+  --color-info: #97D6DF;
+  
+  --color-background: #F4F4F4;
   --color-card: #FFFFFF;
-  --color-sidebar: #0D0D0D;
-  --color-surface-dark: #111827;
+  --color-sidebar: #191718;
+  --color-surface-dark: #191718;
   
-  --color-text-primary: #111827;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  --color-text-primary: #191718;
+  --color-text-secondary: color-mix(in srgb, #191718 65%, #F4F4F4);
+  --color-text-muted: color-mix(in srgb, #191718 40%, #F4F4F4);
   
-  --color-border-default: #E5E7EB;
-  --color-border-soft: #F1F5F9;
+  --color-border-default: #E2EEF0;
+  --color-border-soft: color-mix(in srgb, #E2EEF0 60%, #FFFFFF);
 
   --font-sans: var(--font-inter), sans-serif;
 }
