@@ -86,12 +86,12 @@ export default function Dashboard() {
             linkText="Lihat Laporan"
           />
           <SummaryCard 
-            title="Total Volume Produk" 
+            title="Total Transaksi" 
             value={`${data?.trends?.current_orders || 0} Trx`}
             trend={`${data?.trends?.order_growth_pct || 0}%`}
             trendType={data?.trends?.order_trend === "up" ? "up" : "down"}
-            icon="inventory_2"
-            linkText="Lihat Stok Produk"
+            icon="receipt_long"
+            linkText="Lihat Riwayat Transaksi"
           />
         </div>
 
