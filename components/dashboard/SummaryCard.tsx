@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type SummaryCardProps = {
   title: string;
   value: string;
@@ -5,9 +7,10 @@ type SummaryCardProps = {
   trendType: "up" | "down";
   icon: string;
   linkText: string;
+  href?: string;
 };
 
-export default function SummaryCard({ title, value, trend, trendType, icon, linkText }: SummaryCardProps) {
+export default function SummaryCard({ title, value, trend, trendType, icon, linkText, href }: SummaryCardProps) {
   const isUp = trendType === "up";
   
   return (
@@ -30,10 +33,17 @@ export default function SummaryCard({ title, value, trend, trendType, icon, link
       </div>
       
       <div className="border-t border-border-soft pt-4 mt-auto">
-        <button className="flex items-center justify-between w-full text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors">
-          {linkText}
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-        </button>
+        {href ? (
+          <Link href={href} className="flex items-center justify-between w-full text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors">
+            {linkText}
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </Link>
+        ) : (
+          <button className="flex items-center justify-between w-full text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors">
+            {linkText}
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </button>
+        )}
       </div>
     </div>
   );

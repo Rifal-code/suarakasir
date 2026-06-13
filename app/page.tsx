@@ -64,7 +64,7 @@ export default function Dashboard() {
     product: o.items?.[0]?.product_name || "Produk",
     items: o.items || [],
     date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
-    payment: "Kasir",
+    price: formatRp(o.items?.[0]?.unit_price || 0),
     amount: formatRp(o.total_amount),
     status: "Selesai", // Dummy
     statusColor: "success",
@@ -87,6 +87,7 @@ export default function Dashboard() {
             trendType={data?.trends?.sales_trend === "up" ? "up" : "down"}
             icon="payments"
             linkText="Lihat Laporan"
+            href="/history"
           />
           <SummaryCard 
             title="Total Transaksi" 
@@ -95,6 +96,7 @@ export default function Dashboard() {
             trendType={data?.trends?.order_trend === "up" ? "up" : "down"}
             icon="receipt_long"
             linkText="Lihat Riwayat Transaksi"
+            href="/history"
           />
         </div>
 

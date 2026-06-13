@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type TopProduct = {
   product_id: string;
   product_name: string;
@@ -27,7 +29,7 @@ export default function TopSellingCard({ products }: TopSellingCardProps) {
     <div className="bg-card rounded-3xl p-6 border border-border-soft shadow-sm h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-text-primary">Produk Terlaris</h3>
-        <button className="text-text-secondary hover:text-text-primary text-xs font-semibold">Lihat Semua</button>
+        <Link href="/products" className="text-text-secondary hover:text-text-primary text-xs font-semibold">Lihat Semua</Link>
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2 -mr-2">

@@ -21,27 +21,27 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-[260px] h-screen sticky top-0 bg-[#111111] py-8 px-6 z-50 text-white border-r border-border-default/10 shadow-2xl">
-      <div className="mb-10 px-2 flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-          <span className="material-symbols-outlined text-white text-xl">bolt</span>
+    <aside className="hidden lg:flex flex-col w-[200px] h-screen sticky top-0 bg-[#111111] py-6 px-4 z-50 text-white border-r border-border-default/10 shadow-2xl">
+      <div className="mb-8 px-1 flex items-center gap-2.5">
+        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+          <span className="material-symbols-outlined text-white text-[18px]">bolt</span>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Suara Kasir</h1>
-          <p className="text-[10px] text-text-muted mt-0.5 uppercase tracking-widest">
+        <div className="min-w-0">
+          <h1 className="text-base font-bold text-white tracking-tight truncate">Suara Kasir</h1>
+          <p className="text-[9px] text-text-muted mt-0.5 uppercase tracking-widest">
             AI POS System
           </p>
         </div>
       </div>
 
-      <nav className="flex flex-col gap-2 flex-grow">
+      <nav className="flex flex-col gap-1.5 flex-grow">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                 isActive
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
                   : "text-text-muted hover:bg-white/10 hover:text-white"
@@ -62,7 +62,7 @@ export default function Sidebar() {
       <div className="mt-auto pt-6 border-t border-white/10">
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-4 px-4 py-3 w-full rounded-2xl text-text-muted hover:bg-[#ff4b4b]/10 hover:text-[#ff4b4b] transition-all group"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-text-muted hover:bg-[#ff4b4b]/10 hover:text-[#ff4b4b] transition-all group"
         >
           <span className="material-symbols-outlined opacity-70 group-hover:opacity-100 rotate-180">logout</span>
           <span className="font-medium text-sm">Keluar</span>
