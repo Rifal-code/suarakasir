@@ -48,18 +48,21 @@ export default function Dashboard() {
   // Format currency
   const formatRp = (val: string | number) => `Rp ${Number(val || 0).toLocaleString('id-ID')}`;
 
-  // Mapping API response to Component props
   // 1. Bar Chart Data
-  const chartData = data?.sales?.data?.map((item: any) => ({
+  const rawSalesData = data?.sales?.data || [];
+  const maxSales = rawSalesData.reduce((max: number, item: any) => Math.max(max, Number(item.total_sales)), 0) || 1; // avoid division by 0
+
+  const chartData = rawSalesData.map((item: any) => ({
     label: new Date(item.label).toLocaleDateString('id-ID', { weekday: 'short' }),
-    solid: Math.min(100, Math.max(10, (Number(item.total_sales) / 5000000) * 100)), // dummy scale calculation
+    solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100), 
     striped: 100
-  })) || [];
+  }));
 
   // 2. Recent Orders
   const recentOrders = Array.isArray(data?.orders) ? data.orders.map((o: any) => ({
     id: `#${o.id?.substring(0,6) || 'XXXX'}`,
     product: o.items?.[0]?.product_name || "Produk",
+    items: o.items || [],
     date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
     payment: "Kasir",
     amount: formatRp(o.total_amount),
@@ -76,7 +79,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6 mb-6">
         
         {/* Column 1: Stacked Summary Cards */}
-        <div className="flex flex-col gap-6 xl:col-span-3 h-full">
+        <div className="flex flex-col gap-6 xl:col-span-4 h-full">
           <SummaryCard 
             title="Total Penjualan Produk" 
             value={formatRp(data?.trends?.current_sales || 0)}
@@ -96,18 +99,13 @@ export default function Dashboard() {
         </div>
 
         {/* Column 2: Bar Chart */}
-        <div className="xl:col-span-5 h-full min-h-[350px]">
+        <div className="xl:col-span-8 h-full min-h-[350px]">
           <BarChartCard 
             totalSales={formatRp(data?.trends?.current_sales || 0)}
             trend={`${data?.trends?.sales_growth_pct || 0}%`}
             isTrendUp={data?.trends?.sales_trend === "up"}
             chartData={chartData}
           />
-        </div>
-        
-        {/* Column 3: Donut Chart */}
-        <div className="xl:col-span-4 h-full min-h-[350px]">
-          <DonutChartCard />
         </div>
         
       </div>

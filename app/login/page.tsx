@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchApi, setAuthToken } from "@/lib/api";
+import { fetchApi, setAuthToken, setUserName } from "@/lib/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("admin@example.com");
@@ -24,6 +24,8 @@ export default function LoginPage() {
 
       if (response.ok && data.success && data.data?.token) {
         setAuthToken(data.data.token);
+        const name = data.data.user?.name || email.split("@")[0] || "Admin";
+        setUserName(name);
         router.push("/");
       } else {
         setError(data.message || "Login gagal, silakan periksa email dan password Anda.");
