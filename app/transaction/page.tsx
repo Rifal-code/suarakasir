@@ -44,6 +44,53 @@ export default function TransactionPage() {
     loadProducts();
   }, [toast]);
 
+  // Handle voice order items
+  useEffect(() => {
+    const handleVoiceOrder = () => {
+      const pendingStr = sessionStorage.getItem("pending_voice_order");
+      if (pendingStr && products.length > 0) {
+        try {
+          const items = JSON.parse(pendingStr);
+          
+          const newCartItems: CartItemType[] = items.map((item: any) => {
+            const product = products.find(p => p.id === item.product_id);
+            return {
+              id: product ? product.id : item.product_id || Math.random().toString(),
+              product_id: item.product_id,
+              name: product ? product.name : item.name,
+              price: product ? parseFloat(product.price) : parseFloat(item.unit_price || "0"),
+              imageUrl: product ? (product.image_url || undefined) : undefined,
+              qty: item.quantity,
+              needsConfirmation: item.needs_confirmation
+            };
+          });
+
+          setCart(prev => {
+             const merged = [...prev];
+             newCartItems.forEach(newItem => {
+                const existing = merged.find(i => i.product_id === newItem.product_id);
+                if (existing) { existing.qty += newItem.qty; }
+                else { merged.push(newItem); }
+             });
+             return merged;
+          });
+          
+          sessionStorage.removeItem("pending_voice_order");
+          setShowPanel(true);
+        } catch (e) {
+          console.error("Failed to parse pending voice order", e);
+        }
+      }
+    };
+
+    // Run on initial load if products are ready
+    handleVoiceOrder();
+    
+    // Also listen for event from ClientLayout
+    window.addEventListener("voiceOrderReady", handleVoiceOrder);
+    return () => window.removeEventListener("voiceOrderReady", handleVoiceOrder);
+  }, [products]);
+
   const filteredProducts = products.filter(p => {
     // Currently, API doesn't seem to have a category field. We'll ignore category filter for now or mock it if needed.
     // Assuming we just filter by search query.
@@ -210,7 +257,7 @@ export default function TransactionPage() {
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <span className="material-symbols-outlined text-[48px] text-border-default">

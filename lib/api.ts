@@ -63,5 +63,13 @@ export const fetchApi = async (endpoint: string, options: RequestInit = {}) => {
     }
   }
 
+
   return { response, data };
+};
+
+export const parseVoiceOrder = async (items: {n: string, q: number}[]) => {
+  return fetchApi("/api/ai/parse-order", {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  });
 };

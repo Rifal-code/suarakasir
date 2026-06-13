@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function BottomBar() {
+interface BottomBarProps {
+  onMicClick?: () => void;
+}
+
+export default function BottomBar({ onMicClick }: BottomBarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -40,7 +44,10 @@ export default function BottomBar() {
         {/* Floating Action Button (Microphone) with simulated curve */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-8 flex justify-center z-20">
           <div className="bg-background rounded-full p-1.5 w-[76px] h-[76px] flex items-center justify-center">
-            <button className="w-full h-full bg-primary rounded-full flex flex-col items-center justify-center shadow-lg shadow-primary/40 hover:scale-105 active:scale-95 transition-all relative overflow-hidden group">
+            <button 
+              onClick={onMicClick}
+              className="w-full h-full bg-primary rounded-full flex flex-col items-center justify-center shadow-lg shadow-primary/40 hover:scale-105 active:scale-95 transition-all relative overflow-hidden group"
+            >
               <span className="material-symbols-outlined text-white text-[32px] group-hover:scale-110 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>
                 mic
               </span>

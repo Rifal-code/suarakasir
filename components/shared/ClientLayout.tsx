@@ -6,11 +6,13 @@ import { getAuthToken } from "@/lib/api";
 import TopBar from "@/components/shared/TopBar";
 import BottomBar from "@/components/shared/BottomBar";
 import Sidebar from "@/components/shared/Sidebar";
+import VoiceSheet from "@/components/voice/VoiceSheet";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [showVoiceSheet, setShowVoiceSheet] = useState(false);
 
   const isLoginPage = pathname === "/login";
 
@@ -46,8 +48,27 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <BottomBar />
+        <BottomBar onMicClick={() => setShowVoiceSheet(true)} />
       </div>
+
+      {/* Voice Order Overlay */}
+      {showVoiceSheet && (
+        <VoiceSheet 
+          onClose={() => setShowVoiceSheet(false)}
+          onParsedItems={(items) => {
+            setShowVoiceSheet(false);
+            if (items.length > 0) {
+              sessionStorage.setItem("pending_voice_order", JSON.stringify(items));
+              if (pathname !== "/transaction") {
+                router.push("/transaction");
+              } else {
+                // If already on transaction page, trigger a custom event
+                window.dispatchEvent(new Event("voiceOrderReady"));
+              }
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
