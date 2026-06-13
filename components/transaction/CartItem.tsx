@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type CartItemProps = {
   name: string;
@@ -14,6 +14,10 @@ type CartItemProps = {
 
 export default function CartItem({ name, variant, price, imageUrl, initialQty = 1, onRemove, onQtyChange }: CartItemProps) {
   const [qty, setQty] = useState(initialQty);
+
+  useEffect(() => {
+    setQty(initialQty);
+  }, [initialQty]);
 
   const handleDecrease = () => {
     if (qty > 1) {
@@ -32,7 +36,7 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
   };
 
   return (
-    <div className="flex gap-3 group">
+    <div className="flex p-2 rounded-xl shadow-sm bg-secondary gap-3 group">
       <div className="w-16 h-16 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-border-soft flex items-center justify-center">
         {imageUrl ? (
           <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
@@ -64,7 +68,7 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
               onClick={handleDecrease}
               className="w-6 h-6 flex items-center justify-center hover:text-primary transition-all rounded"
             >
-              <span className="material-symbols-outlined text-[14px]">remove</span>
+              <span className="material-symbols-outlined text-[12px]">remove</span>
             </button>
             <span className="text-xs font-bold w-5 text-center">{String(qty).padStart(2, "0")}</span>
             <button

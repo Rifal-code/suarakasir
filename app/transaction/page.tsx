@@ -180,15 +180,30 @@ export default function TransactionPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 pb-20 md:pb-0">
-              {filteredProducts.map(product => (
+              {filteredProducts.map(product => {
+                const cartItem = cart.find(item => item.product_id === product.id);
+                const isInCart = !!cartItem;
+
+                return (
                 <div
                   key={product.id}
                   onClick={() => {
                     if (product.stock > 0) addToCart(product);
                   }}
-                  className={`bg-white rounded-2xl border flex flex-col group transition-all duration-300 hover:shadow-xl relative overflow-hidden ${product.stock <= 0 ? 'opacity-60 cursor-not-allowed border-border-default' : 'cursor-pointer hover:border-primary/50 border-border-soft'
+                  className={`bg-white rounded-2xl flex flex-col group transition-all duration-300 hover:shadow-xl relative overflow-hidden ${product.stock <= 0
+                    ? 'opacity-60 cursor-not-allowed border-2 border-border-default'
+                    : isInCart
+                      ? 'cursor-pointer border-2 border-primary shadow-lg shadow-primary/10'
+                      : 'cursor-pointer border border-border-soft hover:border-primary/50'
                     }`}
                 >
+                  {/* In-Cart Badge */}
+                  {isInCart && (
+                    <div className="absolute top-3 right-3 z-20 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[11px] font-bold shadow-md shadow-primary/30">
+                      {cartItem.qty}
+                    </div>
+                  )}
+
                   {/* Image Area */}
                   <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
                     {product.image_url ? (
@@ -212,11 +227,11 @@ export default function TransactionPage() {
                   </div>
 
                   {/* Content Area */}
-                  <div className="p-3 flex flex-col flex-1 relative">
-                    <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight mb-2 pr-6">{product.name}</h3>
+                  <div className="p-3 bg-sidebar flex flex-col flex-1 relative">
+                    <h3 className="text-sm font-medium text-text-white line-clamp-2 leading-tight mb-2 pr-6">{product.name}</h3>
 
                     <div className="mt-auto flex items-end pt-1 pb-1">
-                      <span className="text-base font-semibold text-text-primary leading-none">{formatRupiah(parseFloat(product.price))}</span>
+                      <span className="text-base font-semibold text-text-white leading-none">{formatRupiah(parseFloat(product.price))}</span>
                     </div>
 
                     {/* Action Button (+) */}
@@ -237,7 +252,8 @@ export default function TransactionPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

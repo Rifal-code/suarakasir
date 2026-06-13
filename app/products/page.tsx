@@ -11,6 +11,7 @@ type Product = {
   id: string;
   name: string;
   price: string;
+  rawPrice: number;
   stock: number;
   imageUrl: string;
   description?: string;
@@ -36,6 +37,7 @@ export default function ProductsPage() {
           id: p.id || p.product_id,
           name: p.name,
           price: `Rp ${Number(p.price).toLocaleString('id-ID')}`,
+          rawPrice: Number(p.price),
           stock: p.stock || 0,
           imageUrl: p.image_url || "https://placehold.co/400x400?text=No+Image",
           description: p.description,
@@ -144,7 +146,7 @@ export default function ProductsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {filteredProducts.map(product => (
             <ProductCard
               key={product.id}
@@ -168,7 +170,7 @@ export default function ProductsPage() {
         productId={selectedProduct?.id || ""}
         initialData={selectedProduct ? {
           name: selectedProduct.name,
-          price: selectedProduct.price,
+          price: selectedProduct.rawPrice,
           stock: selectedProduct.stock,
           description: selectedProduct.description,
           imageUrl: selectedProduct.imageUrl,

@@ -41,45 +41,43 @@ export default function ProductCard({ id, name, price, imageUrl, stock, onEdit, 
   return (
     <div 
       onClick={handleCardClick}
-      className="bg-card rounded-xl border border-border-default flex flex-col overflow-hidden group cursor-pointer transition-all duration-300 hover:border-primary/50 hover:shadow-md relative"
+      className="bg-white rounded-2xl border border-border-soft flex flex-col overflow-hidden group cursor-pointer transition-all duration-300 hover:border-primary/50 hover:shadow-xl relative"
     >
       {/* Image Area */}
-      <div className="relative aspect-square w-full bg-background overflow-hidden border-b border-border-soft">
+      <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
         <img 
           src={imageUrl} 
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
         />
 
-        {/* Stock Badge */}
-        <div className="absolute top-2 left-2 z-10">
-          <span className={`text-[10px] font-bold px-2 py-1 rounded shadow-sm leading-none backdrop-blur-md ${
-            stock > 10 ? 'bg-success/90 text-white' : 'bg-danger/90 text-white'
-          }`}>
-            Stok: {stock}
+        {/* Stock Badge - same style as transaction */}
+        <div className="absolute top-3 left-3 z-10">
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm leading-none bg-white text-text-primary">
+            {stock} stok
           </span>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="p-2 sm:p-3 flex flex-col flex-1 relative">
-        <h3 className="text-[11px] sm:text-xs font-semibold text-text-primary line-clamp-2 leading-snug mb-1.5 pr-6">{name}</h3>
+      {/* Content Area - dark bg like transaction */}
+      <div className="p-3 bg-sidebar flex flex-col flex-1 relative">
+        <h3 className="text-sm font-medium text-text-white line-clamp-2 leading-tight mb-2 pr-6">{name}</h3>
         
-        <div className="mt-auto flex items-end pt-1">
-          <p className="text-sm sm:text-base font-bold text-text-primary leading-none">{price}</p>
+        <div className="mt-auto flex items-end pt-1 pb-1">
+          <p className="text-base font-semibold text-text-white leading-none">{price}</p>
         </div>
 
-        {/* 3-Dot Menu Button */}
+        {/* 3-Dot Menu Button - orange color */}
         <button 
           onClick={handleMenuClick}
-          className="absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-border-soft transition-colors z-10"
+          className="absolute bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-primary hover:text-primary-hover hover:bg-white/10 transition-colors z-10"
         >
-          <span className="material-symbols-outlined text-[16px]">more_horiz</span>
+          <span className="material-symbols-outlined text-[18px]">more_horiz</span>
         </button>
 
         {/* Popup Menu */}
         {showMenu && (
-          <div className="absolute bottom-9 right-2 w-32 bg-card rounded-xl border border-border-default shadow-lg overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute bottom-10 right-2 w-32 bg-card rounded-xl border border-border-default shadow-lg overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-150">
             <button 
               onClick={handleEditClick}
               className="w-full text-left px-4 py-2.5 text-xs font-semibold text-text-primary hover:bg-background flex items-center gap-2 transition-colors border-b border-border-soft"

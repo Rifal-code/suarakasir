@@ -37,8 +37,8 @@ export default function OrderPanel({
   return (
     <aside className="w-full xl:w-[320px] bg-white flex flex-col h-full rounded-3xl shadow-xl border border-border-soft overflow-hidden">
       {/* Header */}
-      <div className="p-6 flex justify-between items-center border-b border-border-default">
-        <h2 className="text-lg font-bold text-text-primary">Detail Pesanan</h2>
+      <div className="p-6 flex bg-sidebar justify-between items-center border-b border-border-default">
+        <h2 className="text-lg font-bold text-text-white">Detail Pesanan</h2>
         <span className="text-[10px] font-bold text-text-secondary bg-background px-2.5 py-1 rounded-md border border-border-soft">
           Pesanan Baru
         </span>
