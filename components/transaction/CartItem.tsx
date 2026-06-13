@@ -8,11 +8,12 @@ type CartItemProps = {
   price: number;
   imageUrl?: string;
   initialQty?: number;
+  needsConfirmation?: boolean;
   onRemove?: () => void;
   onQtyChange?: (qty: number) => void;
 };
 
-export default function CartItem({ name, variant, price, imageUrl, initialQty = 1, onRemove, onQtyChange }: CartItemProps) {
+export default function CartItem({ name, variant, price, imageUrl, initialQty = 1, needsConfirmation, onRemove, onQtyChange }: CartItemProps) {
   const [qty, setQty] = useState(initialQty);
 
   useEffect(() => {
@@ -36,7 +37,12 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
   };
 
   return (
-    <div className="flex p-2 rounded-xl shadow-sm bg-secondary gap-3 group">
+    <div className={`flex p-2 rounded-xl shadow-sm gap-3 group relative ${needsConfirmation ? 'bg-indigo-50/50 border border-indigo-200' : 'bg-secondary'}`}>
+      {needsConfirmation && (
+        <div className="absolute -top-2 -right-2 z-10 bg-white rounded-full flex items-center justify-center" title="Hasil AI - Mohon verifikasi">
+          <span className="material-symbols-outlined text-[18px] text-indigo-500" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+        </div>
+      )}
       <div className="w-16 h-16 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-border-soft flex items-center justify-center">
         {imageUrl ? (
           <img src={imageUrl} alt={name} className="w-full h-full object-cover" />

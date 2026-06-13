@@ -10,6 +10,7 @@ export interface CartItemType {
   price: number;
   imageUrl?: string;
   qty: number;
+  needsConfirmation?: boolean;
 }
 
 interface OrderPanelProps {
@@ -72,6 +73,7 @@ export default function OrderPanel({
                 price={item.price}
                 imageUrl={item.imageUrl}
                 initialQty={item.qty}
+                needsConfirmation={item.needsConfirmation}
                 onRemove={() => onRemoveItem(item.id)}
                 onQtyChange={(newQty) => onUpdateQty(item.id, newQty)}
               />
