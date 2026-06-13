@@ -4,9 +4,9 @@ import { useState } from "react";
 
 type CartItemProps = {
   name: string;
-  variant: string;
+  variant?: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string;
   initialQty?: number;
   onRemove?: () => void;
   onQtyChange?: (qty: number) => void;
@@ -33,18 +33,24 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
 
   return (
     <div className="flex gap-3 group">
-      <div className="w-16 h-16 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-border-soft">
-        <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+      <div className="w-16 h-16 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-border-soft flex items-center justify-center">
+        {imageUrl ? (
+          <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="material-symbols-outlined text-[24px] text-border-default">inventory_2</span>
+        )}
       </div>
       <div className="flex-grow flex flex-col justify-between py-0.5 min-w-0">
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-text-primary truncate">{name}</h4>
-            <span className="text-[10px] bg-background px-2 py-0.5 rounded font-semibold text-text-secondary inline-block mt-1 border border-border-soft">
-              {variant}
-            </span>
+            {variant && (
+              <span className="text-[10px] bg-background px-2 py-0.5 rounded font-semibold text-text-secondary inline-block mt-1 border border-border-soft">
+                {variant}
+              </span>
+            )}
           </div>
-          <button 
+          <button
             onClick={onRemove}
             className="text-text-muted hover:text-danger transition-colors flex-shrink-0"
           >
@@ -54,14 +60,14 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
         <div className="flex justify-between items-center mt-1">
           <span className="text-sm font-bold text-text-primary">{formatRupiah(price * qty)}</span>
           <div className="flex items-center gap-2 bg-background rounded-lg px-1.5 py-0.5 border border-border-soft">
-            <button 
+            <button
               onClick={handleDecrease}
               className="w-6 h-6 flex items-center justify-center hover:text-primary transition-all rounded"
             >
               <span className="material-symbols-outlined text-[14px]">remove</span>
             </button>
             <span className="text-xs font-bold w-5 text-center">{String(qty).padStart(2, "0")}</span>
-            <button 
+            <button
               onClick={handleIncrease}
               className="w-6 h-6 flex items-center justify-center hover:text-primary transition-all rounded"
             >
@@ -73,3 +79,4 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
     </div>
   );
 }
+

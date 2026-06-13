@@ -1,54 +1,152 @@
 "use client";
 
-import { useState } from "react";
-import OrderPanel from "@/components/transaction/OrderPanel";
+import { useState, useEffect } from "react";
+import OrderPanel, { CartItemType } from "@/components/transaction/OrderPanel";
+import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
-const categories = [
-  { name: "Semua", icon: "category" },
-  { name: "Makanan", icon: "restaurant" },
-  { name: "Minuman", icon: "local_cafe" },
-  { name: "Snack", icon: "cookie" },
-  { name: "Dessert", icon: "cake" },
-];
-
-const products = [
-  { id: 1, name: "Ayam Bakar Madu", price: 35000, category: "Makanan", stock: 24 },
-  { id: 2, name: "Nasi Goreng Spesial", price: 28000, category: "Makanan", stock: 18 },
-  { id: 3, name: "Es Kopi Susu Gula Aren", price: 18000, category: "Minuman", stock: 50 },
-  { id: 4, name: "Salad Buah Segar", price: 25000, category: "Makanan", stock: 12 },
-  { id: 5, name: "Thai Tea", price: 15000, category: "Minuman", stock: 30 },
-  { id: 6, name: "Roti Bakar Coklat", price: 22000, category: "Snack", stock: 15 },
-  { id: 7, name: "Mie Goreng Jawa", price: 26000, category: "Makanan", stock: 20 },
-  { id: 8, name: "Matcha Latte", price: 22000, category: "Minuman", stock: 25 },
-  { id: 9, name: "Pisang Goreng Keju", price: 18000, category: "Snack", stock: 35 },
-  { id: 10, name: "Puding Caramel", price: 20000, category: "Dessert", stock: 10 },
-  { id: 11, name: "Es Jeruk Segar", price: 12000, category: "Minuman", stock: 40 },
-  { id: 12, name: "Sate Ayam 10 Tusuk", price: 32000, category: "Makanan", stock: 16 },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+  image_url: string | null;
+  stock: number;
+}
 
 export default function TransactionPage() {
-  const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [showPanel, setShowPanel] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [cart, setCart] = useState<CartItemType[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toast = useToast();
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await fetchApi("/api/products?limit=100");
+        if (data && data.success) {
+          setProducts(data.data);
+        } else {
+          toast.error("Gagal memuat katalog produk");
+        }
+      } catch (error) {
+        toast.error("Terjadi kesalahan saat memuat produk");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [toast]);
 
   const filteredProducts = products.filter(p => {
-    const matchCategory = activeCategory === "Semua" || p.category === activeCategory;
+    // Currently, API doesn't seem to have a category field. We'll ignore category filter for now or mock it if needed.
+    // Assuming we just filter by search query.
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
+    return matchSearch;
   });
 
   const formatRupiah = (num: number) => {
     return "Rp " + num.toLocaleString("id-ID");
   };
 
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product_id === product.id);
+      if (existing) {
+        if (existing.qty >= product.stock) {
+          toast.error(`Stok ${product.name} tidak mencukupi (Tersedia: ${product.stock})`);
+          return prev;
+        }
+        return prev.map(item =>
+          item.product_id === product.id ? { ...item, qty: item.qty + 1 } : item
+        );
+      } else {
+        if (product.stock <= 0) {
+          toast.error(`Stok ${product.name} habis`);
+          return prev;
+        }
+        return [...prev, {
+          id: product.id,
+          product_id: product.id,
+          name: product.name,
+          price: parseFloat(product.price),
+          imageUrl: product.image_url || undefined,
+          qty: 1
+        }];
+      }
+    });
+  };
+
+  const updateCartQty = (id: string, newQty: number) => {
+    if (newQty <= 0) {
+      removeCartItem(id);
+      return;
+    }
+
+    // Check stock limit
+    const product = products.find(p => p.id === id);
+    if (product && newQty > product.stock) {
+      toast.error(`Stok ${product.name} tidak mencukupi (Tersedia: ${product.stock})`);
+      return;
+    }
+
+    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: newQty } : item));
+  };
+
+  const removeCartItem = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        items: cart.map(item => ({
+          product_id: item.product_id,
+          quantity: item.qty
+        }))
+      };
+
+      const { response, data } = await fetchApi("/api/orders", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok && data.success) {
+        toast.success("Pesanan berhasil dibuat!");
+        setCart([]);
+        setShowPanel(false);
+        // Refresh products to update stock
+        const { data: updatedData } = await fetchApi("/api/products?limit=100");
+        if (updatedData && updatedData.success) {
+          setProducts(updatedData.data);
+        }
+      } else {
+        toast.error(data.message || "Gagal membuat pesanan");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan jaringan saat membuat pesanan");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const cartItemsCount = cart.reduce((sum, item) => sum + item.qty, 0);
+
   return (
-    <div className="flex gap-6 h-[calc(100vh-120px)] -mx-6 md:-mx-10">
-      
+    <div className="flex gap-4 md:gap-6 h-[calc(100vh-100px)] w-full">
       {/* Left: Product Catalog */}
-      <div className="flex-1 flex flex-col px-6 md:px-10 overflow-hidden">
-        
-        {/* Mobile Search */}
-        <div className="md:hidden mb-4">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-[20px]">search</span>
             <input
@@ -58,67 +156,102 @@ export default function TransactionPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-card pl-12 pr-4 py-3 rounded-2xl border border-border-soft focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm shadow-sm"
             />
-          </div>
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
-          {categories.map(cat => (
-            <button
-              key={cat.name}
-              onClick={() => setActiveCategory(cat.name)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
-                activeCategory === cat.name
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "bg-card text-text-secondary border border-border-soft hover:border-primary/30 hover:text-primary"
-              }`}
-            >
-              <span 
-                className="material-symbols-outlined text-[18px]"
-                style={{ fontVariationSettings: activeCategory === cat.name ? "'FILL' 1" : "'FILL' 0" }}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
               >
-                {cat.icon}
-              </span>
-              {cat.name}
-            </button>
-          ))}
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto no-scrollbar">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map(product => (
-              <button
-                key={product.id}
-                className="bg-card rounded-2xl p-4 border border-border-soft hover:border-primary/30 hover:shadow-md transition-all duration-200 text-left group active:scale-[0.97] flex flex-col"
-              >
-                <div className="bg-background rounded-xl aspect-square flex items-center justify-center mb-3 relative overflow-hidden">
-                  <span className="material-symbols-outlined text-[48px] text-border-default group-hover:text-primary/30 transition-colors">
-                    {product.category === "Makanan" ? "restaurant" : 
-                     product.category === "Minuman" ? "local_cafe" : 
-                     product.category === "Snack" ? "cookie" : "cake"}
-                  </span>
-                  <span className="absolute top-2 right-2 text-[9px] bg-white/90 backdrop-blur px-1.5 py-0.5 rounded-md font-bold text-text-secondary shadow-sm">
-                    {product.stock}
-                  </span>
+        <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64 text-text-muted">
+              <span className="material-symbols-outlined animate-spin text-[32px] mb-2">autorenew</span>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-text-muted">
+              <span className="material-symbols-outlined text-[48px] mb-2 opacity-30">inventory_2</span>
+              <p>Produk tidak ditemukan</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 pb-20 md:pb-0">
+              {filteredProducts.map(product => (
+                <div
+                  key={product.id}
+                  onClick={() => {
+                    if (product.stock > 0) addToCart(product);
+                  }}
+                  className={`bg-white rounded-2xl border flex flex-col group transition-all duration-300 hover:shadow-xl relative overflow-hidden ${product.stock <= 0 ? 'opacity-60 cursor-not-allowed border-border-default' : 'cursor-pointer hover:border-primary/50 border-border-soft'
+                    }`}
+                >
+                  {/* Image Area */}
+                  <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <span className="material-symbols-outlined text-[48px] text-border-default">
+                        inventory_2
+                      </span>
+                    )}
+
+                    {/* Stock Badge */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm leading-none bg-white text-text-primary`}>
+                        {product.stock} stok
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  <div className="p-3 flex flex-col flex-1 relative">
+                    <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight mb-2 pr-6">{product.name}</h3>
+
+                    <div className="mt-auto flex items-end pt-1 pb-1">
+                      <span className="text-base font-semibold text-text-primary leading-none">{formatRupiah(parseFloat(product.price))}</span>
+                    </div>
+
+                    {/* Action Button (+) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product);
+                      }}
+                      disabled={product.stock <= 0}
+                      className={`absolute bottom-2 right-2 flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-10 ${product.stock <= 0
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-primary"
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-[24px] font-bold">
+                        {product.stock <= 0 ? 'block' : 'add'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-sm font-bold text-text-primary line-clamp-2 leading-snug">{product.name}</h3>
-                <p className="text-[10px] text-text-muted mt-1">{product.category}</p>
-                <div className="flex items-center justify-between mt-auto pt-3">
-                  <span className="text-sm font-bold text-primary">{formatRupiah(product.price)}</span>
-                  <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                    <span className="material-symbols-outlined text-[16px]">add</span>
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Right: Order Panel (Desktop) */}
-      <div className="hidden xl:flex">
-        <OrderPanel />
+      <div className="hidden xl:flex pb-4">
+        <OrderPanel
+          cart={cart}
+          onUpdateQty={updateCartQty}
+          onRemoveItem={removeCartItem}
+          onCheckout={handleCheckout}
+          isSubmitting={isSubmitting}
+        />
       </div>
 
       {/* Mobile: Floating Cart Button */}
@@ -130,25 +263,33 @@ export default function TransactionPage() {
           <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
             shopping_cart
           </span>
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-            3
-          </span>
+          {cartItemsCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {cartItemsCount}
+            </span>
+          )}
         </button>
       </div>
 
       {/* Mobile: Slide-up Order Panel */}
       {showPanel && (
-        <div className="xl:hidden fixed inset-0 z-50">
+        <div className="xl:hidden fixed inset-0 z-[60]">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPanel(false)}></div>
           <div className="absolute bottom-0 left-0 right-0 h-[85vh] animate-in slide-in-from-bottom duration-300">
-            <div className="relative h-full">
-              <button 
-                onClick={() => setShowPanel(false)} 
-                className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center z-10"
+            <div className="relative h-full bg-card rounded-t-3xl overflow-hidden shadow-2xl">
+              <button
+                onClick={() => setShowPanel(false)}
+                className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center z-10 text-gray-800"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
-              <OrderPanel />
+              <OrderPanel
+                cart={cart}
+                onUpdateQty={updateCartQty}
+                onRemoveItem={removeCartItem}
+                onCheckout={handleCheckout}
+                isSubmitting={isSubmitting}
+              />
             </div>
           </div>
         </div>
