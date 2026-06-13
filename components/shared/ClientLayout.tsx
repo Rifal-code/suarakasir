@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getAuthToken } from "@/lib/api";
 import TopBar from "@/components/shared/TopBar";
 import BottomBar from "@/components/shared/BottomBar";
+import Sidebar from "@/components/shared/Sidebar";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,14 +34,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <>
-      <TopBar />
-      <div className="flex flex-col flex-1 pb-24 md:pb-0 max-w-[1440px] mx-auto w-full">
-        <main className="flex-1 px-4 sm:px-6 md:px-10 py-6">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Sidebar (Desktop only) */}
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden relative">
+        <TopBar />
+        <main className="flex-1 px-4 sm:px-2 md:px-2 py-6 pb-24 md:pb-6 max-w-[1440px] w-full mx-auto">
           {children}
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <BottomBar />
       </div>
-      <BottomBar />
-    </>
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/shared/ClientLayout";
+import { ToastProvider } from "@/components/ui/ToastContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,9 +30,11 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="min-h-full flex flex-col bg-background text-text-primary">
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <ToastProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </ToastProvider>
       </body>
     </html>
   );

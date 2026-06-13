@@ -1,64 +1,57 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getUserName, fetchApi } from "@/lib/api";
 
 export default function TopBar() {
   const pathname = usePathname();
+  const [userName, setUserNameState] = useState("Loading...");
+  const [userEmail, setUserEmailState] = useState("Memuat data...");
   
-  const navLinks = [
-    { name: "Dashboard", href: "/", icon: "dashboard" },
-    { name: "Produk", href: "/products", icon: "inventory_2" },
-    { name: "Transaksi", href: "/transaction", icon: "receipt_long" },
-    { name: "Riwayat", href: "/history", icon: "history" },
-  ];
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { response, data } = await fetchApi("/api/auth/me");
+        if (response.ok && data.success && data.data) {
+          setUserNameState(data.data.name || "Kasir");
+          setUserEmailState(data.data.email || "kasir@suarakasir.com");
+        } else {
+          setUserNameState(getUserName());
+          setUserEmailState("kasir@suarakasir.com");
+        }
+      } catch (error) {
+        setUserNameState(getUserName());
+        setUserEmailState("kasir@suarakasir.com");
+      }
+    };
+    fetchProfile();
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-card border-b border-border-soft px-6 py-4 flex items-center justify-between shadow-sm">
-      {/* Logo Area */}
-      <div className="flex items-center gap-2 pr-8">
-        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
-          <span className="material-symbols-outlined text-white text-lg">bolt</span>
+    <header className="sticky top-0 z-40 bg-white border-b border-border-soft shadow-sm px-6 md:px-10 py-4 flex items-center justify-between">
+      {/* Left Area - Mobile Logo Only */}
+      <div className="flex items-center gap-4">
+        {/* Mobile Title / Logo area when Sidebar is hidden */}
+        <div className="flex lg:hidden items-center gap-3">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/20">
+            <span className="material-symbols-outlined text-white text-lg">bolt</span>
+          </div>
+          <h1 className="text-xl font-bold text-text-primary tracking-tight">Suara Kasir</h1>
         </div>
-        <h1 className="text-xl font-bold text-text-primary">Suara Kasir</h1>
       </div>
-
-      {/* Horizontal Navigation */}
-      <nav className="hidden lg:flex items-center gap-6">
-        {navLinks.map((link) => {
-          const isActive = pathname === link.href;
-          return (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`flex items-center gap-2 py-2 border-b-2 transition-colors ${
-                isActive
-                  ? "border-primary text-text-primary font-bold"
-                  : "border-transparent text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <span className={`material-symbols-outlined text-lg ${isActive ? "text-primary" : ""}`}>
-                {link.icon}
-              </span>
-              <span className="text-sm">{link.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
 
       {/* Right Actions Area */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-semibold text-text-primary">Kasir Utama</p>
-            <p className="text-[10px] text-text-secondary">Admin</p>
+        <div className="flex items-center gap-3 bg-card px-2 py-1.5 rounded-full border border-border-soft shadow-sm cursor-pointer hover:bg-background transition-colors hover:shadow-md">
+          <div className="text-right hidden sm:block pl-3">
+            <p className="text-sm font-bold text-text-primary">{userName}</p>
+            <p className="text-[10px] text-text-secondary font-medium">{userEmail}</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
-            <span className="material-symbols-outlined text-primary">person</span>
+          <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+            <span className="material-symbols-outlined text-primary text-[20px]">person</span>
           </div>
-          <button className="text-text-secondary hover:text-primary">
-             <span className="material-symbols-outlined text-sm">expand_more</span>
-          </button>
+          <span className="material-symbols-outlined text-sm text-text-muted pr-1">expand_more</span>
         </div>
       </div>
     </header>
