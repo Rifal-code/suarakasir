@@ -16,6 +16,20 @@ export const setAuthToken = (token: string) => {
 export const removeAuthToken = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("token");
+    localStorage.removeItem("user_name");
+  }
+};
+
+export const getUserName = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("user_name") || "Kasir Utama";
+  }
+  return "Kasir Utama";
+};
+
+export const setUserName = (name: string) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("user_name", name);
   }
 };
 

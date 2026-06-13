@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://baker-glen-layer-enemies.trycloudflare.com/api/:path*",
+        destination: `${process.env.API_BASE_URL}/api/:path*`,
       },
     ];
   },
