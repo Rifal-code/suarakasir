@@ -244,10 +244,22 @@ export default function TransactionPage() {
                       : 'cursor-pointer border border-border-soft hover:border-primary/50'
                     }`}
                 >
-                  {/* In-Cart Badge */}
+                  {/* In-Cart Badge + Remove */}
                   {isInCart && (
-                    <div className="absolute top-3 right-3 z-20 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[11px] font-bold shadow-md shadow-primary/30">
-                      {cartItem.qty}
+                    <div className="absolute top-3 right-3 z-20 flex items-center gap-1">
+                      <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-[11px] font-bold shadow-md shadow-primary/30">
+                        {cartItem.qty}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeCartItem(product.id);
+                        }}
+                        className="w-6 h-6 bg-white/90 backdrop-blur-sm text-gray-500 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center shadow-md transition-all duration-200 active:scale-90"
+                        title="Hapus dari keranjang"
+                      >
+                        <span className="material-symbols-outlined text-[14px] font-bold">close</span>
+                      </button>
                     </div>
                   )}
 
