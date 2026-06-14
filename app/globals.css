@@ -32,6 +32,16 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+}
+
+/* Ensure Inter applies everywhere including form elements */
+input, button, select, textarea, table {
+  font-family: inherit;
 }
 
 /* Utilities for hiding scrollbar if needed */
