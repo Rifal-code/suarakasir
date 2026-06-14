@@ -10,7 +10,7 @@ interface VoiceSheetProps {
 }
 
 export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) {
-  const { isRecording, transcript, interimTranscript, error, startRecording, stopRecording } = useVoiceRecorder();
+  const { isRecording, error, startRecording, stopRecording } = useVoiceRecorder();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -39,8 +39,7 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
     setIsProcessing(true);
     setLocalError(null);
 
-    const fullTranscript = (transcript + " " + interimTranscript).trim();
-    if (!fullTranscript && !finalBlob) {
+    if (!finalBlob) {
       setLocalError("Tidak ada suara terdeteksi. Silakan coba lagi.");
       setIsProcessing(false);
       return;
@@ -67,7 +66,6 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          transcript: fullTranscript,
           audioBase64,
           mimeType
         }),
@@ -104,8 +102,6 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
       setIsProcessing(false);
     }
   };
-
-  const displayTranscript = (transcript + " " + interimTranscript).trim();
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col justify-end">
@@ -169,13 +165,7 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
             </div>
           ) : (
             <div className="w-full text-center">
-              {displayTranscript ? (
-                <p className="text-gray-800 text-lg leading-relaxed">
-                  "{displayTranscript}"
-                </p>
-              ) : (
                 <p className="text-gray-400 italic">Audio siap dikirim atau coba rekam lagi.</p>
-              )}
             </div>
           )}
         </div>
@@ -211,7 +201,7 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
 
           <button
             onClick={handleSend}
-            disabled={isProcessing || (isRecording && !displayTranscript && !audioBlob)}
+            disabled={isProcessing || (!isRecording && !audioBlob)}
             className="flex-[1.5] py-4 bg-primary text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
           >
             <span className="material-symbols-outlined">send</span>

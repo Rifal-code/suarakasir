@@ -6,15 +6,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { transcript, audioBase64, mimeType } = body;
+    const { audioBase64, mimeType } = body;
 
     console.log("=== GEMINI REQUEST ===");
-    console.log("Transcript received:", transcript || "[EMPTY]");
     console.log("Audio received:", audioBase64 ? `YES (${mimeType})` : "NO");
     console.log("======================");
 
-    if (!transcript && !audioBase64) {
-      return NextResponse.json({ success: false, message: "Audio or transcript is required" }, { status: 400 });
+    if (!audioBase64) {
+      return NextResponse.json({ success: false, message: "Audio is required" }, { status: 400 });
     }
 
     if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {
@@ -49,23 +48,16 @@ export async function POST(req: NextRequest) {
 Aturan ketat:
 1. Ekstrak nama produk (n) dan kuantitas (q).
 2. Jika tidak ada kuantitas yang disebutkan, jadikan q = 1.
-3. DILARANG KERAS mengarang pesanan, menebak angka, atau menambahkan produk yang tidak diucapkan. Jika Anda tidak mendengar pesanan yang jelas, kembalikan array kosong.
-4. Gunakan Teks dari browser sebagai petunjuk utama. Dengarkan audio untuk mengoreksi teks tersebut jika ada yang salah tangkap.
-
-Teks dari browser: "${transcript || 'Tidak ada teks'}"`;
+3. DILARANG KERAS mengarang pesanan, menebak angka, atau menambahkan produk yang tidak diucapkan. Jika Anda tidak mendengar pesanan yang jelas, kembalikan array kosong.`;
 
     let parts: any[] = [];
-    if (audioBase64 && mimeType) {
-      parts.push({
-        inlineData: {
-          data: audioBase64,
-          mimeType: mimeType
-        }
-      });
-      parts.push({ text: promptText + "\n(Dengarkan audio terlampir untuk memastikan keakuratan ucapan)" });
-    } else {
-      parts.push({ text: promptText });
-    }
+    parts.push({
+      inlineData: {
+        data: audioBase64,
+        mimeType: mimeType
+      }
+    });
+    parts.push({ text: promptText + "\n(Dengarkan audio terlampir untuk memastikan keakuratan ucapan dan mengekstrak pesanannya)" });
 
     const result = await model.generateContent(parts);
     const responseText = result.response.text().trim();
