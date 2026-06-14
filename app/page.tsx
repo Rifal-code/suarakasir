@@ -12,16 +12,18 @@ import { fetchApi } from "@/lib/api";
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState("7d");
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      setLoading(true);
       try {
         const [dashboardRes, trendsRes, salesRes, ordersRes, topRes] = await Promise.all([
           fetchApi("/api/dashboard"),
-          fetchApi("/api/dashboard/trends?range=7d"),
-          fetchApi("/api/dashboard/sales?range=7d"),
+          fetchApi(`/api/dashboard/trends?range=${range}`),
+          fetchApi(`/api/dashboard/sales?range=${range}`),
           fetchApi("/api/orders?limit=5"),
-          fetchApi("/api/dashboard/top-products?range=30d")
+          fetchApi(`/api/dashboard/top-products?range=${range}`)
         ]);
 
         setData({
@@ -39,9 +41,9 @@ export default function Dashboard() {
     };
 
     loadDashboardData();
-  }, []);
+  }, [range]);
 
-  if (loading) {
+  if (loading && !data) {
     return <div className="flex items-center justify-center min-h-[50vh]">Loading Dashboard Data...</div>;
   }
 
@@ -52,11 +54,24 @@ export default function Dashboard() {
   const rawSalesData = data?.sales?.data || [];
   const maxSales = rawSalesData.reduce((max: number, item: any) => Math.max(max, Number(item.total_sales)), 0) || 1; // avoid division by 0
 
-  const chartData = rawSalesData.map((item: any) => ({
-    label: new Date(item.label).toLocaleDateString('id-ID', { weekday: 'short' }),
-    solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100), 
-    striped: 100
-  }));
+  const chartData = rawSalesData.map((item: any) => {
+    const d = new Date(item.label || Date.now());
+    let labelText = '';
+    
+    if (range === '7d') {
+      labelText = d.toLocaleDateString('id-ID', { weekday: 'short' });
+    } else if (range === '30d') {
+      labelText = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    } else {
+      labelText = d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+    }
+
+    return {
+      label: labelText,
+      solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100), 
+      striped: 100
+    };
+  });
 
   // 2. Recent Orders
   const recentOrders = Array.isArray(data?.orders) ? data.orders.map((o: any) => ({
@@ -72,8 +87,8 @@ export default function Dashboard() {
   })) : undefined;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <DashboardHeader />
+    <div className={`animate-in fade-in slide-in-from-bottom-4 duration-500 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'} transition-opacity`}>
+      <DashboardHeader range={range} onRangeChange={setRange} />
 
       {/* Row 1: Stats and Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6 mb-6">
