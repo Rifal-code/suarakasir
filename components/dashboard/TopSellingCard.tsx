@@ -13,17 +13,17 @@ type TopSellingCardProps = {
 
 export default function TopSellingCard({ products }: TopSellingCardProps) {
   // Map API response to the required format, or use fallback
-  const topProducts = products && products.length > 0 
+  const topProducts = products && products.length > 0
     ? products.map((p, idx) => ({
-        id: idx + 1,
-        name: p.product_name,
-        sales: `${p.total_quantity} items`,
-        revenue: `Rp ${Number(p.total_revenue).toLocaleString('id-ID')}`,
-        icon: "inventory_2"
-      }))
+      id: idx + 1,
+      name: p.product_name,
+      sales: `${p.total_quantity} items`,
+      revenue: `Rp ${Number(p.total_revenue).toLocaleString('id-ID')}`,
+      icon: "inventory_2"
+    }))
     : [
-        { id: 1, name: "Data Kosong", sales: "-", revenue: "-", icon: "error" },
-      ];
+      { id: 1, name: "Data Kosong", sales: "-", revenue: "-", icon: "error" },
+    ];
 
   return (
     <div className="bg-card rounded-3xl p-6 border border-border-soft shadow-sm h-full flex flex-col">

@@ -77,10 +77,10 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
                 <td className="py-4 text-xs font-bold text-text-primary align-top">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-background flex shrink-0 items-center justify-center border border-border-soft">
-                       <span className="material-symbols-outlined text-[16px] text-primary">{order.icon}</span>
+                      <span className="material-symbols-outlined text-[16px] text-primary">{order.icon}</span>
                     </div>
                     <div className="flex flex-col w-full">
-                      <div 
+                      <div
                         className={`flex items-center gap-1 cursor-pointer select-none group ${(order.items && order.items.length > 1) ? 'hover:text-primary' : ''}`}
                         onClick={() => {
                           if (order.items && order.items.length > 1) {
@@ -95,7 +95,7 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
                           </span>
                         )}
                       </div>
-                      
+
                       {/* Expanded Items Name */}
                       {expandedId === order.id && order.items && order.items.length > 1 && (
                         <div className="mt-2 pl-2 border-l-2 border-border-soft flex flex-col gap-1.5 animate-in slide-in-from-top-1 duration-200">
@@ -129,11 +129,10 @@ export default function RecentOrders({ orders }: RecentOrdersProps) {
                 </td>
                 <td className="py-4 align-top">
                   <div className="flex items-center h-[20px]">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
-                      order.statusColor === 'info' ? 'bg-info/10 text-info' :
-                      order.statusColor === 'success' ? 'bg-success/10 text-success' :
-                      'bg-danger/10 text-danger'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${order.statusColor === 'info' ? 'bg-info/10 text-info' :
+                        order.statusColor === 'success' ? 'bg-success/10 text-success' :
+                          'bg-danger/10 text-danger'
+                      }`}>
                       {order.status}
                     </span>
                   </div>
