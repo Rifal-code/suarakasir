@@ -1,3 +1,100 @@
+Kasir API
+Backend REST API untuk sistem Point-of-Sale (Kasir) UMKM. Dibangun dengan Rust, Axum, SQLx, dan MySQL. Mendukung autentikasi JWT, manajemen produk (termasuk gambar & stok), order dengan validasi stok, dashboard penjualan, pemrosesan order via suara menggunakan fuzzy matching, dan laporan PDF penjualan bertenaga AI.
+
+Tech Stack
+Lapisan	Teknologi
+Bahasa	Rust (2021 edition)
+Web Framework	Axum 0.8
+Database	MySQL (via SQLx 0.8)
+Autentikasi	JWT (jsonwebtoken 9)
+Hashing Password	bcrypt
+Validasi	validator 0.18
+Konfigurasi	dotenvy
+Fuzzy Matching	strsim 0.11 (Jaro-Winkler)
+AI / Voice	Reqwest → Gemini API
+PDF Generation	genpdf 0.2
+Persiapan
+1. Prasyarat
+Rust (stable)
+MySQL 8.0+
+Font LiberationSans di direktori ./fonts/ (sudah disertakan di repo)
+2. Konfigurasi
+Salin .env.example ke .env dan isi nilainya:
+
+APP_HOST=127.0.0.1
+APP_PORT=8000
+DATABASE_URL=mysql://root:password@localhost:3306/kasir
+JWT_SECRET=ganti-dengan-secret-yang-aman
+AI_API_KEY=api-key-gemini-anda
+AI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+FONT_DIR=./fonts
+3. Migrasi Database
+Jalankan migration secara berurutan:
+
+mysql -u root -p kasir < migrations/001_create_users_table.sql
+mysql -u root -p kasir < migrations/002_create_products_table.sql
+mysql -u root -p kasir < migrations/003_create_orders_tables.sql
+mysql -u root -p kasir < migrations/004_create_feedback_table.sql
+mysql -u root -p kasir < migrations/005_add_product_image_stock.sql
+mysql -u root -p kasir < migrations/006_add_user_address_contact.sql
+4. Jalankan Server
+cargo run
+Server berjalan di http://127.0.0.1:8000.
+
+Arsitektur
+src/
+├── config.rs
+├── state.rs                       # AppState (db pool + config)
+├── main.rs
+├── database/
+├── models/                        # Struct SQLx FromRow
+│   ├── user.rs                    # + address, contact
+│   ├── product.rs                 # + image_url, stock
+│   ├── order.rs
+│   └── feedback.rs
+├── dto/                           # DTO Request/Response
+│   ├── auth/                      # + address, contact di Profile
+│   ├── product.rs                 # + image_url, stock
+│   ├── order.rs
+│   ├── feedback.rs
+│   ├── dashboard.rs
+│   ├── report.rs                  # (BARU) Report & PDF
+│   └── ai.rs                      # + ParseOrderRequest, MatchedOrderItem
+├── repositories/                  # Layer akses database
+│   ├── user_repository.rs         # + address, contact
+│   ├── product_repository.rs
+│   ├── order_repository.rs
+│   ├── feedback_repository.rs
+│   └── dashboard_repository.rs
+├── services/                      # Layer business logic
+│   ├── auth/                      # + address, contact
+│   ├── product_service.rs
+│   ├── order_service.rs
+│   ├── feedback_services.rs
+│   ├── dashboard_service.rs
+│   ├── ai_service.rs              # + parse_order + fuzzy matching
+│   ├── ai_insight_service.rs      # (BARU) Insight teks dari Gemini
+│   └── report_service.rs          # (BARU) Agregasi data + PDF genpdf
+├── handlers/                      # HTTP handlers
+│   ├── auth/
+│   ├── products.rs
+│   ├── orders.rs
+│   ├── feedback.rs
+│   ├── dashboard.rs
+│   ├── ai.rs
+│   └── report_handler.rs          # (BARU) GET /reports/sales/pdf
+├── routes/                        # Registrasi route
+│   ├── auth.rs
+│   ├── product.rs
+│   ├── order.rs
+│   ├── feedback.rs
+│   ├── dashboard.rs
+│   ├── ai.rs
+│   └── report.rs                  # (BARU) /api/reports
+├── middleware/
+│   └── jwt.rs
+└── errors/
+    └── app_error.rs               # + From<genpdf::error::Error>
 Format Response
 Semua endpoint menggunakan format JSON yang konsisten.
 
@@ -39,6 +136,54 @@ POST	/api/auth/login	Publik	Login, terima JWT
 POST	/api/auth/logout	🔒 JWT	Logout (hapus token di sisi klien)
 GET	/api/auth/me	🔒 JWT	Profil pengguna yang login
 PUT	/api/auth/me	🔒 JWT	Update profil
+GET /api/auth/me
+Response sekarang menyertakan address dan contact:
+
+{
+  "success": true,
+  "message": "Profile fetched successfully",
+  "data": {
+    "id": "uuid",
+    "name": "Budi Santoso",
+    "email": "budi@example.com",
+    "description": "Pemilik warung makan",
+    "address": "Jl. Merdeka No. 10, Jakarta",
+    "contact": "+6281234567890"
+  }
+}
+PUT /api/auth/me
+Dapat mengupdate field berikut:
+
+Field	Tipe	Wajib	Keterangan
+name	string	Tidak	2–100 karakter
+email	string	Tidak	Harus email valid, tidak duplikat
+password	string	Tidak	Min. 6 karakter
+description	string	Tidak	Bebas
+address	string	Tidak	Maks. 255 karakter — digunakan di laporan PDF
+contact	string	Tidak	Maks. 100 karakter — digunakan di laporan PDF
+⚠️ id, created_at, dan updated_at tidak dapat diubah.
+
+Request:
+
+{
+  "name": "Budi Santoso",
+  "address": "Jl. Merdeka No. 10, Jakarta",
+  "contact": "+6281234567890"
+}
+Response:
+
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": "uuid",
+    "name": "Budi Santoso",
+    "email": "budi@example.com",
+    "description": "...",
+    "address": "Jl. Merdeka No. 10, Jakarta",
+    "contact": "+6281234567890"
+  }
+}
 Produk — /api/products 🔒
 Semua endpoint produk memerlukan JWT. User hanya bisa akses produk miliknya sendiri.
 
@@ -108,69 +253,6 @@ GET	/api/dashboard	—	Ringkasan penjualan
 GET	/api/dashboard/sales	range=7d|30d|1y	Data grafik penjualan
 GET	/api/dashboard/top-products	range=7d|30d|1y	Produk terlaris
 GET	/api/dashboard/trends	range=7d|30d|1y	Perbandingan pertumbuhan
-GET /api/dashboard
-{
-  "success": true,
-  "message": "Dashboard overview",
-  "data": {
-    "total_sales_today": "125000.00",
-    "total_sales_week": "870000.00",
-    "total_sales_month": "3500000.00",
-    "total_orders_today": 8,
-    "total_orders_week": 54,
-    "total_orders_month": 210,
-    "best_selling_product": {
-      "product_id": "uuid",
-      "product_name": "Kopi Susu",
-      "total_quantity": 120,
-      "total_revenue": "1800000.00"
-    },
-    "recent_orders_count": 210
-  }
-}
-GET /api/dashboard/sales?range=7d
-{
-  "success": true,
-  "message": "Sales chart data",
-  "data": {
-    "range": "7d",
-    "data": [
-      { "label": "2026-06-06", "total_sales": "150000.00", "total_orders": 10 },
-      { "label": "2026-06-07", "total_sales": "0.00", "total_orders": 0 }
-    ]
-  }
-}
-Range 1y menggunakan agregasi bulanan (YYYY-MM). Range lainnya agregasi harian. Hari tanpa transaksi tetap muncul dengan nilai 0.
-
-GET /api/dashboard/top-products?range=30d
-{
-  "success": true,
-  "message": "Top products",
-  "data": [
-    {
-      "product_id": "uuid",
-      "product_name": "Kopi Susu",
-      "total_quantity": 120,
-      "total_revenue": "1800000.00"
-    }
-  ]
-}
-GET /api/dashboard/trends?range=7d
-{
-  "success": true,
-  "message": "Sales trends",
-  "data": {
-    "range": "7d",
-    "current_sales": "870000.00",
-    "previous_sales": "650000.00",
-    "sales_growth_pct": 33.85,
-    "current_orders": 54,
-    "previous_orders": 40,
-    "order_growth_pct": 35.0,
-    "sales_trend": "up",
-    "order_trend": "up"
-  }
-}
 AI & Voice — /api/ai 🔒
 POST /api/ai/chat
 Chat umum dengan AI assistant.
@@ -196,42 +278,44 @@ Request:
     { "n": "es teh mnis", "q": 2 }
   ]
 }
-Response:
-
-{
-  "success": true,
-  "message": "Order parsed from voice input",
-  "data": {
-    "items": [
-      {
-        "product_id": "uuid",
-        "name": "Bakso",
-        "input_name": "baxo",
-        "quantity": 3,
-        "unit_price": "15000.00",
-        "confidence": 0.9333,
-        "needs_confirmation": false
-      },
-      {
-        "product_id": "uuid",
-        "name": "Es Teh Manis",
-        "input_name": "es teh mnis",
-        "quantity": 2,
-        "unit_price": "5000.00",
-        "confidence": 0.9542,
-        "needs_confirmation": false
-      }
-    ]
-  }
-}
 Aturan Fuzzy Matching:
 
 Algoritma: Jaro-Winkler (dari crate strsim)
-Bonus: jika input adalah substring dari nama produk (atau sebaliknya)
 confidence: nilai 0.0–1.0 (4 desimal)
 needs_confirmation: true jika confidence < 0.80
-Daftar produk tidak pernah dikirim ke Gemini — Gemini hanya mengubah suara/teks manusia menjadi JSON mentah
-Setelah dikonfirmasi user, kirim POST /api/orders dengan data yang tervalidasi.
+Daftar produk tidak pernah dikirim ke Gemini
+Laporan PDF — /api/reports 🔒
+GET /api/reports/sales/pdf
+Menghasilkan laporan penjualan dalam format PDF. Data diambil dari database berdasarkan user yang login.
+
+Autentikasi: Bearer JWT
+
+Query Parameters:
+
+Parameter	Nilai	Default	Keterangan
+range	7d	✓	Laporan 7 hari terakhir
+range	30d	—	Laporan 30 hari terakhir
+range	1y	—	Laporan 1 tahun terakhir
+Contoh Request:
+
+GET /api/reports/sales/pdf?range=30d
+Authorization: Bearer <jwt_token>
+Response: application/pdf (file PDF langsung diunduh)
+
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="laporan-penjualan-30d.pdf"
+Isi PDF (mengikuti struktur templates/reports/sales_report.html):
+
+Header UMKM — nama, alamat, dan kontak dari profil user
+Informasi Laporan — periode mulai & selesai
+Ringkasan — total omzet, jumlah transaksi, total item, produk terlaris
+Insight AI — analisis bisnis singkat dalam bahasa Indonesia yang dihasilkan Gemini
+Produk Terlaris — tabel top 10 produk berdasarkan qty terjual
+Detail Transaksi — tabel semua order items dalam periode dengan total footer
+Tanda Tangan — nama pemilik dan tanggal cetak
+💡 Tips: Lengkapi dulu address dan contact di profil (PUT /api/auth/me) agar laporan PDF menampilkan informasi UMKM yang lengkap.
+
+💡 Insight AI: Jika AI_API_KEY tidak dikonfigurasi, sistem akan menggunakan insight statis yang dihitung dari data penjualan aktual.
 
 Referensi Error
 HTTP Status	AppError	Penyebab Umum
@@ -241,7 +325,7 @@ HTTP Status	AppError	Penyebab Umum
 404	NotFound	Resource tidak ditemukan
 409	Conflict	Email/nama produk duplikat
 422	ValidationError	Validasi field gagal, stok tidak cukup
-500	InternalServerError	Error database atau server
+500	InternalServerError	Error database, server, atau PDF generation
 Keamanan
 Password di-hash dengan bcrypt
 Token JWT menggunakan HS256 dengan secret yang dapat dikonfigurasi
@@ -249,3 +333,41 @@ Semua operasi tulis dibatasi per-user — akses lintas user mengembalikan 403
 Soft delete menjaga integritas data (record yang dihapus dikecualikan dari semua query)
 Harga order selalu dihitung server-side — total dari klien diabaikan
 Stok divalidasi atomik dengan UPDATE ... WHERE stock >= qty
+Skema Database
+users
+  id (PK), name, email (UNIQUE), password, description,
+  address VARCHAR(255),          -- BARU: alamat UMKM untuk laporan
+  contact VARCHAR(100),          -- BARU: nomor telepon/WA untuk laporan
+  created_at, updated_at, deleted_at
+
+products
+  id (PK), user_id (FK→users), name, price (DECIMAL),
+  description, image_url, stock (INT),
+  created_at, updated_at, deleted_at
+
+orders
+  id (PK), user_id (FK→users), total_amount (DECIMAL),
+  status (TINYINT: 0=pending, 1=completed),
+  created_at, updated_at, deleted_at
+
+order_items
+  id (PK), order_id (FK→orders), product_id (FK→products),
+  quantity, unit_price (snapshot harga), subtotal
+
+feedback
+  id (PK), user_id (FK→users), message (TEXT),
+  is_public (TINYINT), created_at, updated_at, deleted_at
+Catatan Deployment
+Jalankan migration 006 sebelum start server:
+
+mysql -u root -p kasir < migrations/006_add_user_address_contact.sql
+Pastikan direktori fonts/ tersedia di working directory server:
+
+fonts/
+├── LiberationSans-Regular.ttf
+├── LiberationSans-Bold.ttf
+├── LiberationSans-Italic.ttf
+└── LiberationSans-BoldItalic.ttf
+Atau set FONT_DIR=/path/to/fonts di .env.
+
+AI Insight bersifat opsional — jika AI_API_KEY tidak di-set, laporan tetap bisa dibuat dengan insight statis berdasarkan data DB.
