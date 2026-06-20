@@ -20,6 +20,21 @@ export const removeAuthToken = () => {
   }
 };
 
+export const logoutBackend = async () => {
+  try {
+    // Attempt to hit the backend logout endpoint
+    await fetchApi("/api/auth/logout", { method: "POST" });
+  } catch (error) {
+    console.error("Backend logout error:", error);
+  } finally {
+    // Always remove token in frontend regardless of backend success
+    removeAuthToken();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  }
+};
+
 export const getUserName = () => {
   if (typeof window !== "undefined") {
     return localStorage.getItem("user_name") || "Kasir Utama";
