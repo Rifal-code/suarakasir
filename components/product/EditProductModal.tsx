@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 type EditProductModalProps = {
   isOpen: boolean;
@@ -26,8 +27,8 @@ export default function EditProductModal({ isOpen, productId, initialData, onClo
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (initialData && isOpen) {
@@ -37,7 +38,6 @@ export default function EditProductModal({ isOpen, productId, initialData, onClo
       setDescription(initialData.description || "");
       setImagePreview(initialData.imageUrl || null);
       setImageFile(null);
-      setError("");
     }
   }, [initialData, isOpen]);
 
@@ -80,7 +80,6 @@ export default function EditProductModal({ isOpen, productId, initialData, onClo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       if (!name || !price) {
@@ -109,13 +108,14 @@ export default function EditProductModal({ isOpen, productId, initialData, onClo
       });
 
       if (response.ok && data.success) {
+        toast.success("Produk berhasil diperbarui!");
         onSuccess();
         onClose();
       } else {
-        throw new Error(data.message || "Gagal memperbarui produk.");
+        toast.error(data.message || "Gagal memperbarui produk.");
       }
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
+      toast.error(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -138,12 +138,6 @@ export default function EditProductModal({ isOpen, productId, initialData, onClo
 
         {/* Body */}
         <div className="p-6 max-h-[75vh] overflow-y-auto">
-          {error && (
-            <div className="mb-6 p-3 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm font-medium flex gap-2 items-start">
-              <span className="material-symbols-outlined text-[18px]">error</span>
-              {error}
-            </div>
-          )}
 
           <form id="editProductForm" onSubmit={handleSubmit} className="space-y-5">
             {/* Image Upload Area */}

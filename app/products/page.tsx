@@ -6,6 +6,7 @@ import AddProductModal from "@/components/product/AddProductModal";
 import EditProductModal from "@/components/product/EditProductModal";
 import DeleteProductDialog from "@/components/product/DeleteProductDialog";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 type Product = {
   id: string;
@@ -27,6 +28,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const toast = useToast();
 
   const loadProducts = async () => {
     setLoading(true);
@@ -44,10 +46,10 @@ export default function ProductsPage() {
         }));
         setProducts(mappedProducts);
       } else {
-        console.error("Gagal memuat produk:", data.message);
+        toast.error(data.message || "Gagal memuat daftar produk.");
       }
     } catch (error) {
-      console.error("Network error:", error);
+      toast.error("Terjadi kesalahan jaringan saat memuat produk.");
     } finally {
       setLoading(false);
     }

@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchApi, setAuthToken, setUserName } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("admin@example.com");
   const [password, setPassword] = useState("password123");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const toast = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       const { response, data } = await fetchApi("/api/auth/login", {
@@ -26,12 +26,13 @@ export default function LoginPage() {
         setAuthToken(data.data.token);
         const name = data.data.user?.name || email.split("@")[0] || "Admin";
         setUserName(name);
+        toast.success(`Selamat datang, ${name}!`);
         router.push("/");
       } else {
-        setError(data.message || "Login gagal, silakan periksa email dan password Anda.");
+        toast.error(data.message || "Login gagal, silakan periksa email dan password Anda.");
       }
     } catch (err) {
-      setError("Terjadi kesalahan jaringan. Gagal menghubungi server.");
+      toast.error("Terjadi kesalahan jaringan. Gagal menghubungi server.");
     } finally {
       setLoading(false);
     }
@@ -47,12 +48,6 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-text-primary">Masuk ke Suara Kasir</h1>
           <p className="text-sm text-text-secondary mt-1">Sistem POS Cerdas Berbasis AI</p>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm font-medium">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

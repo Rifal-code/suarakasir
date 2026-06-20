@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 type DeleteProductDialogProps = {
   isOpen: boolean;
@@ -13,13 +14,12 @@ type DeleteProductDialogProps = {
 
 export default function DeleteProductDialog({ isOpen, productId, productName, onClose, onSuccess }: DeleteProductDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const toast = useToast();
 
   if (!isOpen) return null;
 
   const handleDelete = async () => {
     setLoading(true);
-    setError("");
 
     try {
       const { response, data } = await fetchApi(`/api/products/${productId}`, {
@@ -27,13 +27,14 @@ export default function DeleteProductDialog({ isOpen, productId, productName, on
       });
 
       if (response.ok && data.success) {
+        toast.success("Produk berhasil dihapus!");
         onSuccess();
         onClose();
       } else {
-        throw new Error(data.message || "Gagal menghapus produk.");
+        toast.error(data.message || "Gagal menghapus produk.");
       }
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan jaringan.");
+      toast.error(err.message || "Terjadi kesalahan jaringan.");
     } finally {
       setLoading(false);
     }
@@ -51,12 +52,6 @@ export default function DeleteProductDialog({ isOpen, productId, productName, on
         <p className="text-sm text-text-secondary mb-6">
           Apakah Anda yakin ingin menghapus <strong>{productName}</strong>? Tindakan ini tidak dapat dibatalkan.
         </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm font-medium">
-            {error}
-          </div>
-        )}
 
         <div className="flex gap-3">
           <button 

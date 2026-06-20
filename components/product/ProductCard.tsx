@@ -51,10 +51,10 @@ export default function ProductCard({ id, name, price, imageUrl, stock, onEdit, 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
-        {/* Stock Badge - same style as transaction */}
-        <div className="absolute top-3 left-3 z-10">
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm leading-none bg-white text-text-primary">
-            {stock} stok
+        {/* Stock Badge */}
+        <div className="absolute top-0 left-0 z-10">
+          <span className="flex items-center text-[10px] md:text-[11px] font-bold px-3 py-1.5 bg-[#1a1a1a] text-white rounded-tl-2xl rounded-br-2xl shadow-sm tracking-wide">
+            {stock} Stock
           </span>
         </div>
       </div>

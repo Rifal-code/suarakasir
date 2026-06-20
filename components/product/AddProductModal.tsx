@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 type AddProductModalProps = {
   isOpen: boolean;
@@ -18,8 +19,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   if (!isOpen) return null;
 
@@ -60,7 +61,6 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       if (!name || !price) {
@@ -96,13 +96,14 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         setDescription("");
         setImageFile(null);
         setImagePreview(null);
+        toast.success("Produk berhasil ditambahkan!");
         onSuccess();
         onClose();
       } else {
-        throw new Error(data.message || "Gagal menyimpan produk.");
+        toast.error(data.message || "Gagal menyimpan produk.");
       }
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan. Silakan coba lagi.");
+      toast.error(err.message || "Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -125,12 +126,6 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
 
         {/* Body */}
         <div className="p-6 max-h-[75vh] overflow-y-auto">
-          {error && (
-            <div className="mb-6 p-3 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm font-medium flex gap-2 items-start">
-              <span className="material-symbols-outlined text-[18px]">error</span>
-              {error}
-            </div>
-          )}
 
           <form id="addProductForm" onSubmit={handleSubmit} className="space-y-5">
             {/* Image Upload Area */}
