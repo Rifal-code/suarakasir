@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import OrderPanel, { CartItemType } from "@/components/transaction/OrderPanel";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, swrFetcher } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
+import { SkeletonProductCard } from "@/components/ui/SkeletonCards";
+import useSWR, { mutate } from "swr";
 
 interface Product {
   id: string;
@@ -17,32 +19,13 @@ interface Product {
 export default function TransactionPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPanel, setShowPanel] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
+  const { data: swrData, isLoading } = useSWR("/api/products?limit=100", swrFetcher, {
+    onError: () => toast.error("Gagal memuat katalog produk")
+  });
+  const products: Product[] = swrData?.data || [];
   const [cart, setCart] = useState<CartItemType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const toast = useToast();
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setIsLoading(true);
-        const { data } = await fetchApi("/api/products?limit=100");
-        if (data && data.success) {
-          setProducts(data.data);
-        } else {
-          toast.error("Gagal memuat katalog produk");
-        }
-      } catch (error) {
-        toast.error("Terjadi kesalahan saat memuat produk");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, [toast]);
 
   // Handle voice order items
   useEffect(() => {
@@ -174,11 +157,9 @@ export default function TransactionPage() {
         toast.success("Pesanan berhasil dibuat!");
         setCart([]);
         setShowPanel(false);
-        // Refresh products to update stock
-        const { data: updatedData } = await fetchApi("/api/products?limit=100");
-        if (updatedData && updatedData.success) {
-          setProducts(updatedData.data);
-        }
+        // Smart Cache Invalidation: Refresh products stock, history, and dashboard
+        mutate("/api/products?limit=100");
+        mutate("/api/orders");
       } else {
         toast.error(data.message || "Gagal membuat pesanan");
       }
@@ -220,8 +201,10 @@ export default function TransactionPage() {
         {/* Product Grid */}
         <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64 text-text-muted">
-              <span className="material-symbols-outlined animate-spin text-[32px] mb-2">autorenew</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 pb-20 md:pb-0">
+              {[...Array(8)].map((_, i) => (
+                <SkeletonProductCard key={i} />
+              ))}
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-text-muted">

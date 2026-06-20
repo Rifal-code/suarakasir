@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { fetchApi } from "@/lib/api";
+import React, { useState } from "react";
+import { fetchApi, swrFetcher } from "@/lib/api";
+import useSWR, { mutate } from "swr";
 import { useToast } from "@/components/ui/ToastContext";
 import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
@@ -25,44 +26,30 @@ type Order = {
   icon: string;
 };
 
+import { SkeletonTable } from "@/components/ui/SkeletonCards";
+
 export default function HistoryPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const toast = useToast();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const toast = useToast();
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await fetchApi("/api/orders?limit=100");
-      if (data && data.success) {
-        const mapped = data.data.map((o: any) => ({
-          id: `#${o.id?.substring(0,6) || 'XXXX'}`,
-          rawId: o.id,
-          product: o.items?.[0]?.product_name || "Produk",
-          items: o.items || [],
-          date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          price: `Rp ${Number(o.items?.[0]?.unit_price || 0).toLocaleString('id-ID')}`,
-          amount: `Rp ${Number(o.total_amount).toLocaleString('id-ID')}`,
-          status: "Selesai",
-          statusColor: "success",
-          icon: "receipt_long"
-        }));
-        setOrders(mapped);
-      }
-    } catch (error) {
-      console.error("Gagal memuat riwayat", error);
-      toast.error("Gagal memuat riwayat transaksi.");
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const { data: swrData, isLoading: loading } = useSWR("/api/orders?limit=100", swrFetcher, {
+    onError: () => toast.error("Gagal memuat riwayat transaksi.")
+  });
 
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+  const orders: Order[] = swrData ? swrData.data.map((o: any) => ({
+    id: `#${o.id?.substring(0,6) || 'XXXX'}`,
+    rawId: o.id,
+    product: o.items?.[0]?.product_name || "Produk",
+    items: o.items || [],
+    date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    price: `Rp ${Number(o.items?.[0]?.unit_price || 0).toLocaleString('id-ID')}`,
+    amount: `Rp ${Number(o.total_amount).toLocaleString('id-ID')}`,
+    status: "Selesai",
+    statusColor: "success",
+    icon: "receipt_long"
+  })) : [];
 
   const filteredOrders = orders.filter(o => 
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -94,10 +81,7 @@ export default function HistoryPage() {
 
       <div className="bg-card rounded-3xl p-6 md:p-8 border border-border-soft shadow-sm min-h-[50vh]">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-text-muted flex-col gap-2">
-            <span className="material-symbols-outlined animate-spin text-[32px]">autorenew</span>
-            <span className="text-sm">Memuat data transaksi...</span>
-          </div>
+          <SkeletonTable />
         ) : filteredOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[40vh] text-text-muted">
             <span className="material-symbols-outlined text-[48px] mb-2 opacity-30">receipt_long</span>
@@ -188,7 +172,10 @@ export default function HistoryPage() {
             setSelectedOrderId(null);
             setEditingOrder(order);
           }}
-          onRefresh={loadOrders}
+          onRefresh={() => {
+            mutate("/api/orders?limit=100");
+            mutate("/api/dashboard");
+          }}
         />
       )}
 
@@ -196,7 +183,10 @@ export default function HistoryPage() {
         <EditOrderModal 
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
-          onRefresh={loadOrders}
+          onRefresh={() => {
+            mutate("/api/orders?limit=100");
+            mutate("/api/dashboard");
+          }}
         />
       )}
 

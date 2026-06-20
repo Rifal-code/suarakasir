@@ -88,3 +88,11 @@ export const parseVoiceOrder = async (items: {n: string, q: number}[]) => {
     body: JSON.stringify({ items }),
   });
 };
+
+export const swrFetcher = async (url: string) => {
+  const { response, data } = await fetchApi(url);
+  if (!response.ok || !data.success) {
+    throw new Error(data?.message || "Failed to fetch data");
+  }
+  return data;
+};

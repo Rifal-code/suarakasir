@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { fetchApi, logoutBackend, setUserName } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
+import { SkeletonProfileHeader, SkeletonProfileForm } from "@/components/ui/SkeletonCards";
+import useSWR, { mutate } from "swr";
+import { swrFetcher } from "@/lib/api";
 
 export default function ProfilePage() {
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -18,30 +20,21 @@ export default function ProfilePage() {
     password: ""
   });
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const { response, data } = await fetchApi("/api/auth/me");
-        if (response.ok && data.success && data.data) {
-          setFormData({
-            name: data.data.name || "",
-            email: data.data.email || "",
-            description: data.data.description || "",
-            address: data.data.address || "",
-            contact: data.data.contact || "",
-            password: ""
-          });
-        } else {
-          toast.error("Gagal mengambil data profil.");
-        }
-      } catch (error) {
-        toast.error("Terjadi kesalahan jaringan.");
-      } finally {
-        setLoading(false);
+  const { data: userData, isLoading: loading } = useSWR("/api/auth/me", swrFetcher, {
+    onSuccess: (data) => {
+      if (data?.data) {
+        setFormData({
+          name: data.data.name || "",
+          email: data.data.email || "",
+          description: data.data.description || "",
+          address: data.data.address || "",
+          contact: data.data.contact || "",
+          password: ""
+        });
       }
-    };
-    loadProfile();
-  }, []);
+    },
+    onError: () => toast.error("Gagal memuat profil.")
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -64,9 +57,9 @@ export default function ProfilePage() {
       
       if (response.ok && data.success) {
         toast.success("Profil berhasil diperbarui!");
-        if (payload.name) {
-          setUserName(payload.name);
-        }
+        setUserName(payload.name);
+        // Refresh profile cache
+        mutate("/api/auth/me");
         setFormData({ ...formData, password: "" }); 
       } else {
         toast.error(data.message || "Gagal memperbarui profil.");
@@ -84,9 +77,11 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-10 h-10 border-4 border-sidebar border-t-primary rounded-full animate-spin" />
-        <p className="text-text-secondary font-medium animate-pulse">Memuat data profil...</p>
+      <div className="max-w-[1440px] mx-auto min-h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-card rounded-[32px] md:rounded-[40px] shadow-sm border border-border-soft flex-1 flex flex-col mb-6 overflow-hidden">
+          <SkeletonProfileHeader />
+          <SkeletonProfileForm />
+        </div>
       </div>
     );
   }

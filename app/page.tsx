@@ -7,47 +7,82 @@ import BarChartCard from "@/components/dashboard/BarChartCard";
 import DonutChartCard from "@/components/dashboard/DonutChartCard";
 import RecentOrders from "@/components/dashboard/RecentOrders";
 import TopSellingCard from "@/components/dashboard/TopSellingCard";
+import useSWR from "swr";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
 
+import { SkeletonSummaryCard, SkeletonBarChart, SkeletonTable } from "@/components/ui/SkeletonCards";
+
 export default function Dashboard() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("7d");
   const toast = useToast();
 
-  const loadDashboardData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [dashboardRes, trendsRes, salesRes, ordersRes, topRes] = await Promise.all([
-        fetchApi("/api/dashboard"),
-        fetchApi(`/api/dashboard/trends?range=${range}`),
-        fetchApi(`/api/dashboard/sales?range=${range}`),
-        fetchApi("/api/orders?limit=5"),
-        fetchApi(`/api/dashboard/top-products?range=${range}`)
-      ]);
+  const dashboardFetcher = async ([_, r]: [string, string]) => {
+    const [dashboardRes, trendsRes, salesRes, ordersRes, topRes] = await Promise.all([
+      fetchApi("/api/dashboard"),
+      fetchApi(`/api/dashboard/trends?range=${r}`),
+      fetchApi(`/api/dashboard/sales?range=${r}`),
+      fetchApi("/api/orders?limit=5"),
+      fetchApi(`/api/dashboard/top-products?range=${r}`)
+    ]);
 
-      setData({
-        overview: dashboardRes.data?.data || null,
-        trends: trendsRes.data?.data || null,
-        sales: salesRes.data?.data || null,
-        orders: ordersRes.data?.data || [],
-        topProducts: topRes.data?.data || []
-      });
-    } catch (error) {
-      console.error("Gagal mengambil data dashboard:", error);
-      toast.error("Gagal memuat data dashboard.");
-    } finally {
-      setLoading(false);
-    }
-  }, [range, toast]);
+    if (!dashboardRes.response.ok) throw new Error("Gagal memuat data dashboard.");
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    return {
+      overview: dashboardRes.data?.data || null,
+      trends: trendsRes.data?.data || null,
+      sales: salesRes.data?.data || null,
+      orders: ordersRes.data?.data || [],
+      topProducts: topRes.data?.data || []
+    };
+  };
+
+  const { data, error, isLoading: loading, mutate } = useSWR(["dashboard_data", range], dashboardFetcher, {
+    onError: () => toast.error("Gagal memuat data dashboard.")
+  });
 
   if (loading && !data) {
-    return <div className="flex items-center justify-center min-h-[50vh]">Loading Dashboard Data...</div>;
+    return (
+      <div className="animate-in fade-in duration-500 w-full">
+        <DashboardHeader range={range} onRangeChange={setRange} />
+        
+        {/* Row 1: Stats and Charts Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6 mb-6">
+          <div className="flex flex-col gap-6 xl:col-span-4 h-full">
+            <SkeletonSummaryCard />
+            <SkeletonSummaryCard />
+          </div>
+          <div className="xl:col-span-8 h-full min-h-[350px]">
+            <SkeletonBarChart />
+          </div>
+        </div>
+
+        {/* Row 2: Detail Data Skeleton */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div className="xl:col-span-8">
+            <SkeletonTable />
+          </div>
+          <div className="xl:col-span-4">
+            {/* TopSellingCard Skeleton can just reuse a generic block or table skeleton */}
+            <div className="bg-card rounded-3xl p-6 border border-border-soft shadow-sm animate-pulse h-full min-h-[300px]">
+              <div className="h-5 bg-border-default rounded w-40 mb-2"></div>
+              <div className="h-3 bg-border-default rounded w-64 mb-6"></div>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-4 items-center">
+                    <div className="w-12 h-12 bg-border-default rounded-xl"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-border-default rounded w-3/4"></div>
+                      <div className="h-3 bg-border-default rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Format currency
@@ -136,7 +171,7 @@ export default function Dashboard() {
 
         {/* Left Column (65%) */}
         <div className="xl:col-span-8">
-          <RecentOrders orders={recentOrders} onRefresh={loadDashboardData} />
+          <RecentOrders orders={recentOrders} onRefresh={() => mutate()} />
         </div>
 
         {/* Right Column (35%) */}

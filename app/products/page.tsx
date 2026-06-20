@@ -5,8 +5,10 @@ import ProductCard from "@/components/product/ProductCard";
 import AddProductModal from "@/components/product/AddProductModal";
 import EditProductModal from "@/components/product/EditProductModal";
 import DeleteProductDialog from "@/components/product/DeleteProductDialog";
-import { fetchApi } from "@/lib/api";
+import { SkeletonTable, SkeletonProductCard } from "@/components/ui/SkeletonCards";
+import { fetchApi, swrFetcher } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
+import useSWR, { mutate } from "swr";
 
 type Product = {
   id: string;
@@ -19,45 +21,26 @@ type Product = {
 };
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const toast = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // State for Edit/Delete Modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const toast = useToast();
 
-  const loadProducts = async () => {
-    setLoading(true);
-    try {
-      const { response, data } = await fetchApi("/api/products");
-      if (response.ok && data.success) {
-        const mappedProducts = data.data.map((p: any) => ({
-          id: p.id || p.product_id,
-          name: p.name,
-          price: `Rp ${Number(p.price).toLocaleString('id-ID')}`,
-          rawPrice: Number(p.price),
-          stock: p.stock || 0,
-          imageUrl: p.image_url || "https://placehold.co/400x400?text=No+Image",
-          description: p.description,
-        }));
-        setProducts(mappedProducts);
-      } else {
-        toast.error(data.message || "Gagal memuat daftar produk.");
-      }
-    } catch (error) {
-      toast.error("Terjadi kesalahan jaringan saat memuat produk.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: swrData, isLoading: loading } = useSWR("/api/products", swrFetcher, {
+    onError: () => toast.error("Gagal memuat daftar produk.")
+  });
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const products: Product[] = swrData?.data ? swrData.data.map((p: any) => ({
+    id: p.id || p.product_id,
+    name: p.name,
+    price: `Rp ${Number(p.price).toLocaleString('id-ID')}`,
+    rawPrice: Number(p.price),
+    stock: p.stock || 0,
+    imageUrl: p.image_url || "https://placehold.co/400x400?text=No+Image",
+    description: p.description,
+  })) : [];
 
   const handleEditClick = (id: string) => {
     const p = products.find(prod => prod.id === id);
@@ -113,9 +96,10 @@ export default function ProductsPage() {
 
       {/* Content Area */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[40vh] text-text-secondary flex-col gap-3">
-          <span className="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
-          <p className="font-semibold text-sm">Memuat Katalog Produk...</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonProductCard key={i} />
+          ))}
         </div>
       ) : filteredProducts.length === 0 && searchQuery ? (
         <div className="flex items-center justify-center min-h-[40vh] bg-card rounded-3xl border border-border-default flex-col gap-4 text-center p-8 shadow-sm">
@@ -164,7 +148,7 @@ export default function ProductsPage() {
       <AddProductModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSuccess={loadProducts}
+        onSuccess={() => mutate("/api/products")}
       />
 
       <EditProductModal
@@ -178,7 +162,7 @@ export default function ProductsPage() {
           imageUrl: selectedProduct.imageUrl,
         } : null}
         onClose={() => setIsEditModalOpen(false)}
-        onSuccess={loadProducts}
+        onSuccess={() => mutate("/api/products")}
       />
 
       <DeleteProductDialog
@@ -186,7 +170,7 @@ export default function ProductsPage() {
         productId={selectedProduct?.id || ""}
         productName={selectedProduct?.name || ""}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onSuccess={loadProducts}
+        onSuccess={() => mutate("/api/products")}
       />
     </div>
   );
