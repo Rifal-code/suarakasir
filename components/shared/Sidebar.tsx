@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { removeAuthToken } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 const menuItems = [
   { name: "Dashboard", icon: "dashboard", href: "/" },
@@ -14,9 +15,11 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const toast = useToast();
 
   const handleLogout = () => {
     removeAuthToken();
+    toast.info("Anda telah keluar dari akun.");
     router.push("/login");
   };
 
