@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import SummaryCard from "@/components/dashboard/SummaryCard";
 import BarChartCard from "@/components/dashboard/BarChartCard";
@@ -8,40 +8,43 @@ import DonutChartCard from "@/components/dashboard/DonutChartCard";
 import RecentOrders from "@/components/dashboard/RecentOrders";
 import TopSellingCard from "@/components/dashboard/TopSellingCard";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("7d");
+  const toast = useToast();
+
+  const loadDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [dashboardRes, trendsRes, salesRes, ordersRes, topRes] = await Promise.all([
+        fetchApi("/api/dashboard"),
+        fetchApi(`/api/dashboard/trends?range=${range}`),
+        fetchApi(`/api/dashboard/sales?range=${range}`),
+        fetchApi("/api/orders?limit=5"),
+        fetchApi(`/api/dashboard/top-products?range=${range}`)
+      ]);
+
+      setData({
+        overview: dashboardRes.data?.data || null,
+        trends: trendsRes.data?.data || null,
+        sales: salesRes.data?.data || null,
+        orders: ordersRes.data?.data || [],
+        topProducts: topRes.data?.data || []
+      });
+    } catch (error) {
+      console.error("Gagal mengambil data dashboard:", error);
+      toast.error("Gagal memuat data dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }, [range, toast]);
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      try {
-        const [dashboardRes, trendsRes, salesRes, ordersRes, topRes] = await Promise.all([
-          fetchApi("/api/dashboard"),
-          fetchApi(`/api/dashboard/trends?range=${range}`),
-          fetchApi(`/api/dashboard/sales?range=${range}`),
-          fetchApi("/api/orders?limit=5"),
-          fetchApi(`/api/dashboard/top-products?range=${range}`)
-        ]);
-
-        setData({
-          overview: dashboardRes.data?.data || null,
-          trends: trendsRes.data?.data || null,
-          sales: salesRes.data?.data || null,
-          orders: ordersRes.data?.data || [],
-          topProducts: topRes.data?.data || []
-        });
-      } catch (error) {
-        console.error("Gagal mengambil data dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDashboardData();
-  }, [range]);
+  }, [loadDashboardData]);
 
   if (loading && !data) {
     return <div className="flex items-center justify-center min-h-[50vh]">Loading Dashboard Data...</div>;
@@ -57,7 +60,7 @@ export default function Dashboard() {
   const chartData = rawSalesData.map((item: any) => {
     const d = new Date(item.label || Date.now());
     let labelText = '';
-    
+
     if (range === '7d') {
       labelText = d.toLocaleDateString('id-ID', { weekday: 'short' });
     } else if (range === '30d') {
@@ -68,14 +71,15 @@ export default function Dashboard() {
 
     return {
       label: labelText,
-      solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100), 
+      solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100),
       striped: 100
     };
   });
 
   // 2. Recent Orders
   const recentOrders = Array.isArray(data?.orders) ? data.orders.map((o: any) => ({
-    id: `#${o.id?.substring(0,6) || 'XXXX'}`,
+    id: `#${o.id?.substring(0, 6) || 'XXXX'}`,
+    rawId: o.id,
     product: o.items?.[0]?.product_name || "Produk",
     items: o.items || [],
     date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
@@ -92,11 +96,11 @@ export default function Dashboard() {
 
       {/* Row 1: Stats and Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6 mb-6">
-        
+
         {/* Column 1: Stacked Summary Cards */}
         <div className="flex flex-col gap-6 xl:col-span-4 h-full">
-          <SummaryCard 
-            title="Total Penjualan Produk" 
+          <SummaryCard
+            title="Total Penjualan Produk"
             value={formatRp(data?.trends?.current_sales || 0)}
             trend={`${data?.trends?.sales_growth_pct || 0}%`}
             trendType={data?.trends?.sales_trend === "up" ? "up" : "down"}
@@ -104,8 +108,8 @@ export default function Dashboard() {
             linkText="Lihat Laporan"
             href="/history"
           />
-          <SummaryCard 
-            title="Total Transaksi" 
+          <SummaryCard
+            title="Total Transaksi"
             value={`${data?.trends?.current_orders || 0} Trx`}
             trend={`${data?.trends?.order_growth_pct || 0}%`}
             trendType={data?.trends?.order_trend === "up" ? "up" : "down"}
@@ -117,29 +121,29 @@ export default function Dashboard() {
 
         {/* Column 2: Bar Chart */}
         <div className="xl:col-span-8 h-full min-h-[350px]">
-          <BarChartCard 
+          <BarChartCard
             totalSales={formatRp(data?.trends?.current_sales || 0)}
             trend={`${data?.trends?.sales_growth_pct || 0}%`}
             isTrendUp={data?.trends?.sales_trend === "up"}
             chartData={chartData}
           />
         </div>
-        
+
       </div>
 
       {/* Row 2: Detail Data */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        
+
         {/* Left Column (65%) */}
         <div className="xl:col-span-8">
-          <RecentOrders orders={recentOrders} />
+          <RecentOrders orders={recentOrders} onRefresh={loadDashboardData} />
         </div>
 
         {/* Right Column (35%) */}
         <div className="xl:col-span-4">
           <TopSellingCard products={data?.topProducts} />
         </div>
-        
+
       </div>
     </div>
   );

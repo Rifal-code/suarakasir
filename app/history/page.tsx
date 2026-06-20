@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
+import OrderDetailModal from "@/components/history/OrderDetailModal";
+import EditOrderModal from "@/components/history/EditOrderModal";
 
 type OrderItem = {
   product_name: string;
@@ -11,6 +14,7 @@ type OrderItem = {
 
 type Order = {
   id: string;
+  rawId: string;
   product: string;
   items?: OrderItem[];
   date: string;
@@ -24,48 +28,46 @@ type Order = {
 export default function HistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const toast = useToast();
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await fetchApi("/api/orders?limit=100");
+      if (data && data.success) {
+        const mapped = data.data.map((o: any) => ({
+          id: `#${o.id?.substring(0,6) || 'XXXX'}`,
+          rawId: o.id,
+          product: o.items?.[0]?.product_name || "Produk",
+          items: o.items || [],
+          date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          price: `Rp ${Number(o.items?.[0]?.unit_price || 0).toLocaleString('id-ID')}`,
+          amount: `Rp ${Number(o.total_amount).toLocaleString('id-ID')}`,
+          status: "Selesai",
+          statusColor: "success",
+          icon: "receipt_long"
+        }));
+        setOrders(mapped);
+      }
+    } catch (error) {
+      console.error("Gagal memuat riwayat", error);
+      toast.error("Gagal memuat riwayat transaksi.");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        const { data } = await fetchApi("/api/orders?limit=100");
-        if (data && data.success) {
-          const mapped = data.data.map((o: any) => ({
-            id: `#${o.id?.substring(0,6) || 'XXXX'}`,
-            product: o.items?.[0]?.product_name || "Produk",
-            items: o.items || [],
-            date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
-            price: `Rp ${Number(o.items?.[0]?.unit_price || 0).toLocaleString('id-ID')}`,
-            amount: `Rp ${Number(o.total_amount).toLocaleString('id-ID')}`,
-            status: "Selesai",
-            statusColor: "success",
-            icon: "receipt_long"
-          }));
-          setOrders(mapped);
-        }
-      } catch (error) {
-        console.error("Gagal memuat riwayat", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadOrders();
-  }, []);
+  }, [loadOrders]);
 
   const filteredOrders = orders.filter(o => 
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (o.items && o.items.some(i => i.product_name.toLowerCase().includes(searchQuery.toLowerCase())))
   );
-
-  const toggleExpand = (id: string) => {
-    if (expandedId === id) {
-      setExpandedId(null);
-    } else {
-      setExpandedId(id);
-    }
-  };
 
   return (
     <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1200px] mx-auto w-full">
@@ -77,14 +79,14 @@ export default function HistoryPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="relative w-64 hidden sm:block">
+          <div className="relative w-full md:w-64">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">search</span>
             <input 
               type="text" 
               placeholder="Cari ID atau nama produk..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white pl-10 pr-4 py-2 rounded-full border border-border-default focus:outline-none focus:border-primary text-sm shadow-sm"
+              className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-border-soft focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm shadow-sm transition-all"
             />
           </div>
         </div>
@@ -97,7 +99,7 @@ export default function HistoryPage() {
             <span className="text-sm">Memuat data transaksi...</span>
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-text-muted">
+          <div className="flex flex-col items-center justify-center h-[40vh] text-text-muted">
             <span className="material-symbols-outlined text-[48px] mb-2 opacity-30">receipt_long</span>
             <p>Tidak ada transaksi ditemukan</p>
           </div>
@@ -112,81 +114,62 @@ export default function HistoryPage() {
               <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="text-[12px] text-text-muted border-b border-border-soft">
-                  <th className="pb-4 font-semibold font-sans">Order ID</th>
+                  <th className="pb-4 font-semibold font-sans w-24">Order ID</th>
                   <th className="pb-4 font-semibold font-sans w-1/3">Nama Produk</th>
                   <th className="pb-4 font-semibold font-sans">Tanggal</th>
-                  <th className="pb-4 font-semibold font-sans">Harga</th>
-                  <th className="pb-4 font-semibold font-sans">Total</th>
+                  <th className="pb-4 font-semibold font-sans">Total Tagihan</th>
                   <th className="pb-4 font-semibold font-sans">Status</th>
+                  <th className="pb-4 font-semibold font-sans text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order, idx) => (
-                  <tr key={idx} className="border-b border-border-soft/50 last:border-0 hover:bg-background/30 transition-colors">
-                    <td className="py-4 text-xs font-bold text-text-primary align-top">{order.id}</td>
-                    <td className="py-4 text-xs font-bold text-text-primary align-top">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-background flex shrink-0 items-center justify-center border border-border-soft">
-                           <span className="material-symbols-outlined text-[16px] text-primary">{order.icon}</span>
+                  <tr 
+                    key={idx} 
+                    className="border-b border-border-soft/50 last:border-0 hover:bg-background/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedOrderId(order.rawId)}
+                  >
+                    <td className="py-4 text-xs font-bold text-text-primary align-middle">
+                      <span className="bg-background border border-border-soft px-2 py-1 rounded-md">{order.id}</span>
+                    </td>
+                    <td className="py-4 text-xs font-bold text-text-primary align-middle">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-background flex shrink-0 items-center justify-center border border-border-soft">
+                           <span className="material-symbols-outlined text-[18px] text-primary">{order.icon}</span>
                         </div>
-                        <div className="flex flex-col w-full">
-                          <div 
-                            className={`flex items-center gap-1 cursor-pointer select-none group ${(order.items && order.items.length > 1) ? 'hover:text-primary' : ''}`}
-                            onClick={() => {
-                              if (order.items && order.items.length > 1) {
-                                toggleExpand(order.id);
-                              }
-                            }}
-                          >
-                            <span className="line-clamp-1">{order.product}</span>
-                            {order.items && order.items.length > 1 && (
-                              <span className={`material-symbols-outlined text-[16px] text-text-muted transition-transform duration-200 group-hover:text-primary ${expandedId === order.id ? 'rotate-180' : ''}`}>
-                                keyboard_arrow_down
-                              </span>
-                            )}
-                          </div>
-                          
-                          {/* Expanded Items Name */}
-                          {expandedId === order.id && order.items && order.items.length > 1 && (
-                            <div className="mt-2 pl-2 border-l-2 border-border-soft flex flex-col gap-1.5 animate-in slide-in-from-top-1 duration-200">
-                              {order.items.slice(1).map((item, i) => (
-                                <div key={i} className="text-[11px] font-medium text-text-secondary flex justify-between h-[16px] items-center">
-                                  <span className="line-clamp-1">{item.product_name}</span>
-                                  <span className="text-text-muted shrink-0 ml-2">x{item.quantity}</span>
-                                </div>
-                              ))}
-                            </div>
+                        <div className="flex flex-col">
+                          <span className="line-clamp-1 text-sm">{order.product}</span>
+                          {order.items && order.items.length > 1 && (
+                            <span className="text-[10px] text-text-muted font-medium mt-0.5">
+                              + {order.items.length - 1} produk lainnya
+                            </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 text-xs font-semibold text-text-secondary align-top">{order.date}</td>
-                    <td className="py-4 text-xs font-bold text-text-primary align-top">
-                      <div className="flex items-center h-[20px]">{order.price}</div>
-                      {/* Expanded Items Price */}
-                      {expandedId === order.id && order.items && order.items.length > 1 && (
-                        <div className="mt-2 flex flex-col gap-1.5 animate-in slide-in-from-top-1 duration-200">
-                          {order.items.slice(1).map((item, i) => (
-                            <div key={i} className="text-[11px] font-medium text-text-secondary h-[16px] flex items-center">
-                              Rp {Number(item.unit_price || 0).toLocaleString('id-ID')}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    <td className="py-4 text-xs font-semibold text-text-secondary align-middle">{order.date}</td>
+                    <td className="py-4 text-sm font-bold text-primary align-middle">
+                      {order.amount}
                     </td>
-                    <td className="py-4 text-xs font-bold text-text-primary align-top">
-                      <div className="flex items-center h-[20px]">{order.amount}</div>
+                    <td className="py-4 align-middle">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                        order.statusColor === 'info' ? 'bg-info/10 text-info' :
+                        order.statusColor === 'success' ? 'bg-success/10 text-success' :
+                        'bg-danger/10 text-danger'
+                      }`}>
+                        {order.status}
+                      </span>
                     </td>
-                    <td className="py-4 align-top">
-                      <div className="flex items-center h-[20px]">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
-                          order.statusColor === 'info' ? 'bg-info/10 text-info' :
-                          order.statusColor === 'success' ? 'bg-success/10 text-success' :
-                          'bg-danger/10 text-danger'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
+                    <td className="py-4 align-middle text-right">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrderId(order.rawId);
+                        }}
+                        className="p-1.5 rounded-lg bg-background hover:bg-primary hover:text-white border border-border-soft hover:border-primary transition-colors text-text-secondary"
+                      >
+                        <span className="material-symbols-outlined text-[18px] block">chevron_right</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -196,6 +179,27 @@ export default function HistoryPage() {
         </div>
         )}
       </div>
+
+      {selectedOrderId && (
+        <OrderDetailModal 
+          orderId={selectedOrderId} 
+          onClose={() => setSelectedOrderId(null)} 
+          onEdit={(order) => {
+            setSelectedOrderId(null);
+            setEditingOrder(order);
+          }}
+          onRefresh={loadOrders}
+        />
+      )}
+
+      {editingOrder && (
+        <EditOrderModal 
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onRefresh={loadOrders}
+        />
+      )}
+
     </div>
   );
 }
