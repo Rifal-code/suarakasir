@@ -61,7 +61,7 @@ export default function TransactionPage() {
               price: product ? parseFloat(product.price) : parseFloat(item.unit_price || "0"),
               imageUrl: product ? (product.image_url || undefined) : undefined,
               qty: item.quantity,
-              needsConfirmation: item.needs_confirmation
+              needsConfirmation: true // Selalu tandai true agar card khusus AI selalu muncul untuk semua item hasil voice AI
             };
           });
 
@@ -69,7 +69,10 @@ export default function TransactionPage() {
              const merged = [...prev];
              newCartItems.forEach(newItem => {
                 const existing = merged.find(i => i.product_id === newItem.product_id);
-                if (existing) { existing.qty += newItem.qty; }
+                if (existing) { 
+                  existing.qty += newItem.qty; 
+                  existing.needsConfirmation = true;
+                }
                 else { merged.push(newItem); }
              });
              return merged;
