@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getUserName, fetchApi } from "@/lib/api";
 
-export default function TopBar() {
+interface TopBarProps {
+  onMicClick?: () => void;
+}
+
+export default function TopBar({ onMicClick }: TopBarProps) {
   const pathname = usePathname();
   const [userName, setUserNameState] = useState("Loading...");
   const [userEmail, setUserEmailState] = useState("Memuat data...");
@@ -60,6 +64,15 @@ export default function TopBar() {
 
       {/* Right Actions Area */}
       <div className="flex items-center gap-3 sm:gap-5">
+        
+        {/* Desktop Voice Action (Hidden on mobile as it's in BottomBar) */}
+        <button
+          onClick={onMicClick}
+          className="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-full font-bold text-sm shadow-md shadow-primary/30 hover:bg-primary-hover active:scale-95 transition-all group"
+        >
+          <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">mic</span>
+          Order Suara
+        </button>
         
         {/* Profile Link Widget */}
         <Link 

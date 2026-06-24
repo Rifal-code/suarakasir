@@ -104,7 +104,7 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col justify-end">
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center sm:p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
@@ -112,10 +112,10 @@ export default function VoiceSheet({ onClose, onParsedItems }: VoiceSheetProps) 
       />
 
       {/* Sheet Content */}
-      <div className="relative bg-white w-full rounded-t-[32px] shadow-2xl p-6 pb-8 animate-in slide-in-from-bottom-full duration-300">
+      <div className="relative bg-white w-full sm:max-w-md mx-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl p-6 pb-8 sm:pb-8 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300">
         
-        {/* Handle bar */}
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+        {/* Handle bar (Mobile Only) */}
+        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden" />
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

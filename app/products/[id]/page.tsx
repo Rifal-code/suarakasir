@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import EditProductModal from "@/components/product/EditProductModal";
 import DeleteProductDialog from "@/components/product/DeleteProductDialog";
+import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -14,9 +15,11 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const loadProductDetail = async () => {
     setLoading(true);
@@ -40,24 +43,21 @@ export default function ProductDetailPage() {
     }
   }, [productId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] text-primary flex-col gap-3">
-        <span className="material-symbols-outlined text-5xl animate-spin">progress_activity</span>
-        <p className="font-bold tracking-widest uppercase text-xs">Memuat Data...</p>
-      </div>
-    );
-  }
+  // — Loading —
+  if (loading) return <ProductDetailSkeleton />;
 
+  // — Error —
   if (error || !product) {
     return (
-      <div className="max-w-[1000px] mx-auto min-h-[50vh] flex flex-col items-center justify-center bg-card rounded-3xl shadow-lg p-10 text-center mt-10">
-        <span className="material-symbols-outlined text-6xl text-danger mb-4">error</span>
-        <h2 className="text-2xl font-black text-text-primary mb-2">Produk Tidak Ditemukan</h2>
-        <p className="text-text-secondary mb-8">{error}</p>
+      <div className="max-w-md mx-auto min-h-[50vh] flex flex-col items-center justify-center text-center px-6 py-16">
+        <div className="w-16 h-16 rounded-2xl bg-danger/10 flex items-center justify-center mb-5">
+          <span className="material-symbols-outlined text-3xl text-danger">error</span>
+        </div>
+        <h2 className="text-lg font-bold text-text-primary mb-1">Produk Tidak Ditemukan</h2>
+        <p className="text-sm text-text-secondary mb-6">{error}</p>
         <button 
           onClick={() => router.push('/products')}
-          className="px-8 py-3 bg-primary text-white rounded-full font-bold shadow-md shadow-primary/30 hover:shadow-lg hover:scale-105 transition-all"
+          className="px-6 py-2.5 bg-surface-dark text-white rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
         >
           Kembali ke Katalog
         </button>
@@ -65,125 +65,304 @@ export default function ProductDetailPage() {
     );
   }
 
+  // — Derived —
   const imageUrl = product.image_url || "https://placehold.co/600x600?text=No+Image";
   const formattedPrice = `Rp ${Number(product.price).toLocaleString('id-ID')}`;
   const addedDate = new Date(product.created_at || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  
+  const stock = product.stock ?? 0;
+  const stockLevel: 'high' | 'low' | 'out' = stock > 10 ? 'high' : stock > 0 ? 'low' : 'out';
+  const stockLabel = { high: 'Tersedia', low: 'Stok Menipis', out: 'Habis' }[stockLevel];
+  const stockColor = { 
+    high: 'text-text-primary', 
+    low: 'text-warning', 
+    out: 'text-danger' 
+  }[stockLevel];
+  const stockBadgeBg = { 
+    high: 'bg-surface-dark/80', 
+    low: 'bg-warning/90', 
+    out: 'bg-danger/90' 
+  }[stockLevel];
 
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1200px] mx-auto pb-12 px-4 sm:px-6 lg:px-8">
-      
-      {/* Top Navigation */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-        <button 
+  const description = product.description || "";
+  const hasLongDesc = description.length > 160;
+
+  // ═══════════════════════════════════
+  // MOBILE LAYOUT  (< lg)
+  // ═══════════════════════════════════
+  const MobileLayout = () => (
+    <div className="lg:hidden animate-in fade-in duration-500">
+      {/* Full-bleed Image */}
+      <div className="relative aspect-[4/3] w-full bg-background overflow-hidden">
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-border-default animate-pulse"></div>
+        )}
+        <img 
+          src={imageUrl} 
+          alt={product.name}
+          onLoad={() => setImgLoaded(true)}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+        {/* Back button overlay */}
+        <button
           onClick={() => router.push('/products')}
-          className="group flex items-center gap-2 text-text-secondary hover:text-primary transition-colors font-bold text-sm bg-card px-5 py-2.5 rounded-full shadow-sm hover:shadow-md"
+          className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white active:scale-90 transition-transform"
         >
-          <span className="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">arrow_left_alt</span>
-          Kembali ke Katalog
+          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
         </button>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button 
-            onClick={() => setIsEditModalOpen(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-success text-white rounded-full font-bold text-sm hover:shadow-lg hover:shadow-success/30 active:scale-95 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">edit_square</span>
-            Edit Produk
-          </button>
-          <button 
-            onClick={() => setIsDeleteDialogOpen(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-danger text-white rounded-full font-bold text-sm hover:shadow-lg hover:shadow-danger/30 active:scale-95 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">delete</span>
-            Hapus
-          </button>
+        {/* Stock badge overlay */}
+        <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide text-white backdrop-blur-md ${stockBadgeBg}`}>
+          {stockLabel.toUpperCase()}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 pt-4 pb-28">
+        {/* Badges */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+            #{productId.substring(0, 8)}
+          </span>
+          <span className="w-1 h-1 rounded-full bg-border-default"></span>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+            Katalog Utama
+          </span>
+        </div>
+
+        {/* Name */}
+        <h1 className="text-xl font-bold text-text-primary leading-snug mb-1.5">
+          {product.name}
+        </h1>
+
+        {/* Price */}
+        <p className="text-2xl font-black text-primary tracking-tight mb-4">
+          {formattedPrice}
+        </p>
+
+        {/* Info rows — compact list style */}
+        <div className="border-t border-b border-border-soft py-3 mb-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-muted font-medium">Stok saat ini</span>
+            <span className={`text-sm font-bold ${stockColor}`}>
+              {stock} unit
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-muted font-medium">Tanggal masuk</span>
+            <span className="text-sm font-medium text-text-primary">{addedDate}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-text-muted font-medium">Status</span>
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+              stockLevel === 'high' ? 'bg-surface-dark/5 text-text-primary' :
+              stockLevel === 'low'  ? 'bg-warning/10 text-warning' :
+                                      'bg-danger/10 text-danger'
+            }`}>
+              {stockLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+            Deskripsi Produk
+          </h3>
+          {description ? (
+            <div className="relative">
+              <p className={`text-sm text-text-secondary leading-relaxed whitespace-pre-wrap ${
+                !descExpanded && hasLongDesc ? 'max-h-[80px] overflow-hidden' : ''
+              }`}>
+                {description}
+              </p>
+              {hasLongDesc && !descExpanded && (
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent"></div>
+              )}
+              {hasLongDesc && (
+                <button
+                  onClick={() => setDescExpanded(!descExpanded)}
+                  className="text-xs font-bold text-primary mt-1"
+                >
+                  {descExpanded ? 'Sembunyikan' : 'Lihat selengkapnya'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted italic">Belum ada deskripsi.</p>
+          )}
         </div>
       </div>
 
-      {/* Main Content Card */}
-      <div className="bg-card rounded-[2rem] shadow-xl overflow-hidden flex flex-col lg:flex-row relative">
-        
-        {/* Decorative Background Blob */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      {/* Sticky bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border-soft px-4 py-3 flex items-center gap-2.5 lg:hidden">
+        <button 
+          onClick={() => setIsEditModalOpen(true)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface-dark text-white rounded-xl text-sm font-bold active:scale-[0.97] transition-transform"
+        >
+          <span className="material-symbols-outlined text-[16px]">edit_square</span>
+          Edit Produk
+        </button>
+        <button 
+          onClick={() => setIsDeleteDialogOpen(true)}
+          className="py-2.5 px-4 border border-border-default text-text-secondary rounded-xl text-sm font-bold active:scale-[0.97] transition-transform"
+        >
+          <span className="material-symbols-outlined text-[16px]">delete</span>
+        </button>
+      </div>
+    </div>
+  );
 
-        {/* Left Column: Image Gallery Style */}
-        <div className="lg:w-1/2 bg-background/50 p-8 lg:p-12 flex flex-col items-center justify-center relative">
-          <div className="w-full aspect-square max-w-[450px] relative rounded-3xl overflow-hidden bg-white shadow-2xl shadow-black/5 group">
-            <img 
-              src={imageUrl} 
-              alt={product.name} 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            />
-            {/* Absolute Badges over image */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-              <span className={`px-3 py-1.5 rounded-lg text-xs font-black tracking-wider text-white backdrop-blur-md shadow-lg ${product.stock > 10 ? 'bg-success/90' : 'bg-danger/90'}`}>
-                {product.stock > 10 ? 'TERSEDIA' : 'STOK MENIPIS'}
+  // ═══════════════════════════════════
+  // DESKTOP LAYOUT  (≥ lg)
+  // ═══════════════════════════════════
+  const DesktopLayout = () => (
+    <div className="hidden lg:block animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[960px] mx-auto pb-10 px-6">
+      {/* Breadcrumb */}
+      <button
+        onClick={() => router.push('/products')}
+        className="group flex items-center gap-1 text-sm text-text-muted hover:text-primary transition-colors mb-5"
+      >
+        <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+        <span className="font-medium">Kembali ke Katalog</span>
+      </button>
+
+      {/* Main Card */}
+      <div className="bg-card rounded-2xl border border-border-soft shadow-sm overflow-hidden flex">
+        
+        {/* Left: Image */}
+        <div className="w-[380px] shrink-0 bg-background/60 p-6 flex items-start">
+          <div className="w-full sticky top-24">
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-white border border-border-soft group">
+              {!imgLoaded && (
+                <div className="absolute inset-0 bg-border-default animate-pulse"></div>
+              )}
+              <img 
+                src={imageUrl} 
+                alt={product.name}
+                onLoad={() => setImgLoaded(true)}
+                className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+              />
+              {/* Stock badge */}
+              <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide text-white backdrop-blur-md shadow ${stockBadgeBg}`}>
+                {stockLabel.toUpperCase()}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Premium Details */}
-        <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center z-10">
+        {/* Right: Details */}
+        <div className="flex-1 p-6 flex flex-col min-h-0">
           
-          {/* Metadata Row */}
-          <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 bg-border-default text-text-secondary rounded-full text-[10px] font-black uppercase tracking-widest">
-              ID: {productId.substring(0, 8)}
+          {/* Meta */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+              #{productId.substring(0, 8)}
             </span>
-            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">
+            <span className="w-1 h-1 rounded-full bg-border-default"></span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
               Katalog Utama
             </span>
           </div>
 
-          <h1 className="text-3xl lg:text-5xl font-black text-text-primary mb-4 leading-tight tracking-tight">
+          {/* Name */}
+          <h1 className="text-2xl font-bold text-text-primary leading-snug mb-2 tracking-tight">
             {product.name}
           </h1>
-          
-          <div className="flex items-baseline gap-4 mb-8 pb-8 border-b border-border-default/50">
-            <p className="text-4xl lg:text-5xl font-black text-primary tracking-tighter">
-              {formattedPrice}
-            </p>
+
+          {/* Price */}
+          <p className="text-3xl font-black text-primary tracking-tight mb-5">
+            {formattedPrice}
+          </p>
+
+          {/* Divider + Info rows */}
+          <div className="border-t border-b border-border-soft py-4 mb-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-muted font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]">inventory_2</span>
+                Stok saat ini
+              </span>
+              <span className={`text-sm font-bold ${stockColor}`}>
+                {stock} unit
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-muted font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                Tanggal masuk
+              </span>
+              <span className="text-sm font-medium text-text-primary">{addedDate}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-muted font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]">info</span>
+                Status
+              </span>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                stockLevel === 'high' ? 'bg-surface-dark/5 text-text-primary' :
+                stockLevel === 'low'  ? 'bg-warning/10 text-warning' :
+                                        'bg-danger/10 text-danger'
+              }`}>
+                {stockLabel}
+              </span>
+            </div>
           </div>
 
-          {/* Elegant Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-10">
-            <div className="bg-background rounded-2xl p-5 border border-border-soft hover:border-primary/30 transition-colors group">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-[20px]">inventory_2</span>
-                </div>
-                <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Stok Saat Ini</span>
-              </div>
-              <span className="text-2xl font-black text-text-primary ml-13">{product.stock} <span className="text-sm text-text-muted font-medium">Unit</span></span>
-            </div>
-            
-            <div className="bg-background rounded-2xl p-5 border border-border-soft hover:border-info/30 transition-colors group">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-info/10 flex items-center justify-center text-info group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-                </div>
-                <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Tgl Masuk</span>
-              </div>
-              <span className="text-lg font-black text-text-primary ml-13">{addedDate}</span>
-            </div>
-          </div>
-
-          {/* Description Section */}
-          <div className="flex-1">
-            <h3 className="flex items-center gap-2 text-sm font-black text-text-primary mb-4 uppercase tracking-widest">
-              <span className="w-2 h-2 rounded-full bg-primary"></span>
-              Informasi Produk
+          {/* Description */}
+          <div className="flex-1 mb-6">
+            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2.5">
+              Deskripsi Produk
             </h3>
-            <div className="prose prose-sm prose-gray max-w-none">
-              <p className="text-base text-text-secondary leading-relaxed whitespace-pre-wrap">
-                {product.description || "Deskripsi lengkap mengenai produk ini belum ditambahkan oleh Kasir. Silakan klik tombol Edit Produk untuk melengkapi informasi."}
-              </p>
-            </div>
+            {description ? (
+              <div className="relative">
+                <p className={`text-[14px] text-text-secondary leading-relaxed whitespace-pre-wrap ${
+                  !descExpanded && hasLongDesc ? 'max-h-[100px] overflow-hidden' : ''
+                }`}>
+                  {description}
+                </p>
+                {hasLongDesc && !descExpanded && (
+                  <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent"></div>
+                )}
+                {hasLongDesc && (
+                  <button
+                    onClick={() => setDescExpanded(!descExpanded)}
+                    className="text-xs font-bold text-primary hover:text-primary-hover mt-1.5 transition-colors"
+                  >
+                    {descExpanded ? 'Sembunyikan' : 'Lihat selengkapnya'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted italic">Belum ada deskripsi produk.</p>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 pt-5 border-t border-border-soft">
+            <button 
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-surface-dark text-white rounded-xl text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit_square</span>
+              Edit Produk
+            </button>
+            <button 
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-4 border border-border-default text-text-secondary rounded-xl text-sm font-medium hover:border-danger hover:text-danger active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">delete</span>
+              Hapus
+            </button>
           </div>
 
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      <MobileLayout />
+      <DesktopLayout />
 
       {/* Modals */}
       <EditProductModal 
@@ -211,7 +390,6 @@ export default function ProductDetailPage() {
           router.push('/products');
         }}
       />
-
-    </div>
+    </>
   );
 }
