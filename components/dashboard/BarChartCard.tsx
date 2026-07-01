@@ -32,38 +32,67 @@ export default function BarChartCard({ totalSales, trend, isTrendUp, chartData }
 
       </div>
 
-      <div className="flex justify-end gap-4 mt-2 mb-6">
+      <div className="flex justify-end gap-4 mt-1 mb-2">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-sidebar"></div>
           <span className="text-[10px] text-text-secondary font-medium">Penjualan Utama</span>
         </div>
-
       </div>
 
       {/* Custom Bar Chart */}
-      <div className="flex-1 mt-4 relative min-h-[150px] overflow-hidden">
-
+      <div className="flex-1 mt-1 relative min-h-[200px] sm:min-h-[220px] overflow-hidden">
+        
         {/* Scrollable Container */}
-        <div className="flex items-end justify-between sm:justify-around gap-2 h-full overflow-x-auto pb-4 custom-scrollbar w-full">
-          {data.map((item, idx) => (
-            <div key={idx} className="flex flex-col items-center flex-1 min-w-[32px] max-w-[48px] h-full justify-end group">
-              <div className="w-full relative rounded-t-xl overflow-hidden flex flex-col justify-end" style={{ height: '100%' }}>
-                {/* Striped Background */}
-                <div
-                  className="w-full absolute bottom-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZjFmNWY5Ij48L3JlY3Q+CjxwYXRoIGQ9Ik0wLDggTDgsMCBMMCwwIEw4LDhaIiBmaWxsPSIjZTVlN2ViIiBmaWxsLW9wYWNpdHk9IjAuNSI+PC9wYXRoPgo8L3N2Zz4=')] rounded-t-xl transition-all duration-300"
-                  style={{ height: '100%' }}
-                ></div>
-                {/* Solid Foreground */}
-                <div
-                  className="w-full bg-sidebar absolute bottom-0 rounded-xl z-10 transition-all duration-500 group-hover:bg-primary"
-                  style={{ height: `${item.solid}%` }}
-                ></div>
+        <div className={`flex items-end h-full overflow-x-auto pb-2 pt-4 px-2 custom-scrollbar w-full ${
+          data.length <= 12 ? 'justify-around' : 'justify-start'
+        } ${data.length > 20 ? 'gap-2' : 'gap-4 sm:gap-6'}`}>
+          
+          {data.map((item, idx) => {
+            const isDense = data.length > 15;
+            const isVeryDense = data.length > 20;
+            
+            // For 30 days, show about 6-7 labels (every 5 days). For 12 months, show all.
+            const labelInterval = isDense ? Math.ceil(data.length / 6) : 1;
+            const showLabel = !isDense || idx % labelInterval === 0 || idx === 0 || idx === data.length - 1;
+            
+            // Dynamic width based on density
+            const barWidth = isVeryDense ? 'w-4 sm:w-5' : (isDense ? 'w-6 sm:w-8' : 'w-8 sm:w-12');
+
+            return (
+              <div key={idx} className={`flex flex-col items-center flex-shrink-0 ${barWidth} h-full justify-end group relative`}>
+                
+                {/* Desktop Tooltip on hover */}
+                <div className="hidden sm:flex opacity-0 group-hover:opacity-100 absolute -top-8 bg-sidebar text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl transition-all transform translate-y-2 group-hover:translate-y-0 pointer-events-none whitespace-nowrap z-30 flex-col items-center">
+                  <span>{item.label}</span>
+                  <span className={item.solid === 0 ? 'text-gray-400' : 'text-primary-light'}>{item.solid === 0 ? 'Tidak ada data' : `${Math.round(item.solid)}%`}</span>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-sidebar"></div>
+                </div>
+
+                {/* Percentage label above bar - always visible, invisible placeholder when 0 */}
+                <span className={`text-[8px] sm:text-[9px] font-bold mb-1 whitespace-nowrap ${
+                  item.solid > 0 ? 'text-text-secondary' : 'invisible'
+                }`}>
+                  {item.solid > 0 ? `${Math.round(item.solid)}%` : '0%'}
+                </span>
+
+                {/* Bar Container */}
+                <div className="w-full relative rounded-md overflow-hidden flex flex-col justify-end bg-gray-100/80 shadow-inner" style={{ height: '100%' }}>
+                  {/* Solid Foreground */}
+                  <div
+                    className="w-full bg-sidebar absolute bottom-0 rounded-md z-10 transition-all duration-500 group-hover:bg-primary group-hover:shadow-[0_0_15px_rgba(255,63,26,0.3)]"
+                    style={{ height: `${item.solid}%` }}
+                  ></div>
+                </div>
+                
+                {/* Label */}
+                <span className={`text-[9px] sm:text-[10px] font-semibold text-text-secondary mt-2.5 transition-colors whitespace-nowrap text-center ${
+                  showLabel ? 'opacity-100' : 'opacity-0 invisible'
+                } group-hover:text-primary group-hover:opacity-100 group-hover:visible`}>
+                  {item.label}
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-text-primary mt-3 bg-text-primary text-white px-2 py-0.5 rounded-full z-20 -mt-3 shadow-sm group-hover:bg-primary transition-colors whitespace-nowrap">
-                {item.label}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

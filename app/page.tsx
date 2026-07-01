@@ -104,9 +104,10 @@ export default function Dashboard() {
       labelText = d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
     }
 
+    const sales = Number(item.total_sales) || 0;
     return {
       label: labelText,
-      solid: Math.max(10, (Number(item.total_sales) / maxSales) * 100),
+      solid: sales === 0 ? 0 : Math.max(10, (sales / maxSales) * 100),
       striped: 100
     };
   });
