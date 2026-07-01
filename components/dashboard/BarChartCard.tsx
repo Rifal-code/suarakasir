@@ -43,7 +43,7 @@ export default function BarChartCard({ totalSales, trend, isTrendUp, chartData }
       <div className="flex-1 mt-1 relative min-h-[200px] sm:min-h-[220px] overflow-hidden">
         
         {/* Scrollable Container */}
-        <div className={`flex items-end h-full overflow-x-auto pb-2 pt-4 px-2 custom-scrollbar w-full ${
+        <div className={`flex items-end h-full overflow-x-auto pb-2 pt-14 px-2 custom-scrollbar w-full ${
           data.length <= 12 ? 'justify-around' : 'justify-start'
         } ${data.length > 20 ? 'gap-2' : 'gap-4 sm:gap-6'}`}>
           
@@ -62,7 +62,7 @@ export default function BarChartCard({ totalSales, trend, isTrendUp, chartData }
               <div key={idx} className={`flex flex-col items-center flex-shrink-0 ${barWidth} h-full justify-end group relative`}>
                 
                 {/* Desktop Tooltip on hover */}
-                <div className="hidden sm:flex opacity-0 group-hover:opacity-100 absolute -top-8 bg-sidebar text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl transition-all transform translate-y-2 group-hover:translate-y-0 pointer-events-none whitespace-nowrap z-30 flex-col items-center">
+                <div className="hidden sm:flex opacity-0 group-hover:opacity-100 absolute -top-12 bg-sidebar text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl transition-all transform translate-y-2 group-hover:translate-y-0 pointer-events-none whitespace-nowrap z-30 flex-col items-center">
                   <span>{item.label}</span>
                   <span className={item.solid === 0 ? 'text-gray-400' : 'text-primary-light'}>{item.solid === 0 ? 'Tidak ada data' : `${Math.round(item.solid)}%`}</span>
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-sidebar"></div>
