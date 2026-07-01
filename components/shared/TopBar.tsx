@@ -14,14 +14,14 @@ export default function TopBar({ onMicClick }: TopBarProps) {
   const [userName, setUserNameState] = useState("Loading...");
   const [userEmail, setUserEmailState] = useState("Memuat data...");
   const [currentDate, setCurrentDate] = useState("");
-  
+
   useEffect(() => {
     // Set formatted date
-    const dateOptions: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     };
     setCurrentDate(new Date().toLocaleDateString('id-ID', dateOptions));
 
@@ -64,7 +64,7 @@ export default function TopBar({ onMicClick }: TopBarProps) {
 
       {/* Right Actions Area */}
       <div className="flex items-center gap-3 sm:gap-5">
-        
+
         {/* Desktop Voice Action (Hidden on mobile as it's in BottomBar) */}
         <button
           onClick={onMicClick}
@@ -73,18 +73,22 @@ export default function TopBar({ onMicClick }: TopBarProps) {
           <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">mic</span>
           Order Suara
         </button>
-        
+
         {/* Profile Link Widget */}
-        <Link 
-          href="/profile" 
-          className="flex items-center gap-3 p-1.5 sm:pr-5 bg-sidebar text-white rounded-full shadow-md hover:bg-black hover:shadow-xl active:scale-95 transition-all group border border-sidebar hover:border-gray-800"
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 p-1.5 sm:pr-5 bg-white text-text-primary rounded-full shadow-sm hover:shadow-md hover:bg-gray-50 active:scale-95 transition-all group border border-border-default"
         >
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-inner shrink-0 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-white text-[20px]">person</span>
+          <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden border border-gray-200">
+            <img 
+              src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(userName)}`} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="text-left hidden sm:block">
-            <p className="text-sm font-bold leading-tight">{userName}</p>
-            <p className="text-[10px] text-white/60 font-medium leading-tight">{userEmail}</p>
+            <p className="text-sm font-bold leading-tight text-text-primary">{userName}</p>
+            <p className="text-[10px] text-text-muted font-medium leading-tight truncate max-w-[120px]">{userEmail}</p>
           </div>
         </Link>
       </div>

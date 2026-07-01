@@ -21,17 +21,16 @@ export default function BottomBar({ onMicClick }: BottomBarProps) {
     <div className="md:hidden fixed bottom-0 left-0 w-full z-50">
       {/* Background with shadow, simulated cutout using CSS */}
       <div className="absolute inset-0 bg-sidebar shadow-[0_-10px_40px_rgba(0,0,0,0.1)]"></div>
-      
+
       <div className="relative flex justify-between items-center px-4 py-2">
         {/* Left items */}
         <div className="flex w-[40%] justify-around">
           {navItems.slice(0, 2).map((item) => (
-            <Link 
+            <Link
               key={item.name}
-              href={item.href} 
-              className={`flex flex-col items-center gap-1 transition-colors z-10 py-2 ${
-                pathname === item.href ? "text-primary" : "text-text-muted hover:text-white"
-              }`}
+              href={item.href}
+              className={`flex flex-col items-center gap-1 transition-colors z-10 py-2 ${pathname === item.href ? "text-primary" : "text-text-muted hover:text-white"
+                }`}
             >
               <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: pathname === item.href ? "'FILL' 1" : "'FILL' 0" }}>
                 {item.icon}
@@ -44,7 +43,7 @@ export default function BottomBar({ onMicClick }: BottomBarProps) {
         {/* Floating Action Button (Microphone) with simulated curve */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-8 flex justify-center z-20">
           <div className="bg-background rounded-full p-1.5 w-[76px] h-[76px] flex items-center justify-center">
-            <button 
+            <button
               onClick={onMicClick}
               className="w-full h-full bg-primary rounded-full flex flex-col items-center justify-center shadow-lg shadow-primary/40 hover:scale-105 active:scale-95 transition-all relative overflow-hidden group"
             >
@@ -60,12 +59,11 @@ export default function BottomBar({ onMicClick }: BottomBarProps) {
         {/* Right items */}
         <div className="flex w-[40%] justify-around">
           {navItems.slice(2, 4).map((item) => (
-            <Link 
+            <Link
               key={item.name}
-              href={item.href} 
-              className={`flex flex-col items-center gap-1 transition-colors z-10 py-2 ${
-                pathname === item.href ? "text-primary" : "text-text-muted hover:text-white"
-              }`}
+              href={item.href}
+              className={`flex flex-col items-center gap-1 transition-colors z-10 py-2 ${pathname === item.href ? "text-primary" : "text-text-muted hover:text-white"
+                }`}
             >
               <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: pathname === item.href ? "'FILL' 1" : "'FILL' 0" }}>
                 {item.icon}
@@ -75,7 +73,7 @@ export default function BottomBar({ onMicClick }: BottomBarProps) {
           ))}
         </div>
       </div>
-      
+
       {/* Safe area padding for newer iPhones */}
       <div className="h-safe-area-bottom bg-sidebar relative z-10"></div>
     </div>
