@@ -121,41 +121,46 @@ export default function Dashboard() {
     date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
     price: formatRp(o.items?.[0]?.unit_price || 0),
     amount: formatRp(o.total_amount),
-    status: "Selesai", // Dummy
-    statusColor: "success",
-    icon: "receipt_long"
+    status: o.status === 1 ? "Selesai" : "Pending",
+    statusColor: o.status === 1 ? "success" : "warning",
+    icon: o.status === 1 ? "receipt_long" : "pending_actions"
   })) : undefined;
 
   return (
     <div className={`animate-in fade-in slide-in-from-bottom-4 duration-500 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'} transition-opacity`}>
       <DashboardHeader range={range} onRangeChange={setRange} />
 
-      {/* Row 1: Stats and Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-6 mb-6">
+      {/* Row 1: KPI Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <SummaryCard
+          title="Total Penjualan Produk"
+          value={formatRp(data?.trends?.current_sales || 0)}
+          trend={`${data?.trends?.sales_growth_pct || 0}%`}
+          trendType={data?.trends?.sales_trend === "up" ? "up" : "down"}
+          icon="payments"
+          linkText="Lihat Laporan"
+          href="/history"
+        />
+        <SummaryCard
+          title="Total Transaksi"
+          value={`${data?.trends?.current_orders || 0} Trx`}
+          trend={`${data?.trends?.order_growth_pct || 0}%`}
+          trendType={data?.trends?.order_trend === "up" ? "up" : "down"}
+          icon="receipt_long"
+          linkText="Lihat Riwayat Transaksi"
+          href="/history"
+        />
+      </div>
 
-        {/* Column 1: Stacked Summary Cards */}
-        <div className="flex flex-col gap-6 xl:col-span-4 h-full">
-          <SummaryCard
-            title="Total Penjualan Produk"
-            value={formatRp(data?.trends?.current_sales || 0)}
-            trend={`${data?.trends?.sales_growth_pct || 0}%`}
-            trendType={data?.trends?.sales_trend === "up" ? "up" : "down"}
-            icon="payments"
-            linkText="Lihat Laporan"
-            href="/history"
-          />
-          <SummaryCard
-            title="Total Transaksi"
-            value={`${data?.trends?.current_orders || 0} Trx`}
-            trend={`${data?.trends?.order_growth_pct || 0}%`}
-            trendType={data?.trends?.order_trend === "up" ? "up" : "down"}
-            icon="receipt_long"
-            linkText="Lihat Riwayat Transaksi"
-            href="/history"
-          />
+      {/* Row 2: Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 mb-6">
+        
+        {/* Left: Donut Chart (4/12) */}
+        <div className="xl:col-span-4 h-full min-h-[350px]">
+          <DonutChartCard products={data?.topProducts} />
         </div>
 
-        {/* Column 2: Bar Chart */}
+        {/* Right: Bar Chart (8/12) */}
         <div className="xl:col-span-8 h-full min-h-[350px]">
           <BarChartCard
             totalSales={formatRp(data?.trends?.current_sales || 0)}
@@ -167,19 +172,18 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Row 2: Detail Data */}
+      {/* Row 3: Detail Data */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-        {/* Left Column (65%) */}
+        {/* Left Column: Recent Orders (8/12) */}
         <div className="xl:col-span-8">
           <RecentOrders orders={recentOrders} onRefresh={() => mutate()} />
         </div>
 
-        {/* Right Column (35%) */}
+        {/* Right Column: Top Selling (4/12) */}
         <div className="xl:col-span-4">
           <TopSellingCard products={data?.topProducts} />
         </div>
-
       </div>
     </div>
   );
