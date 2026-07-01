@@ -16,11 +16,20 @@ export default function AIChatWidget() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, isOpen]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -86,31 +95,35 @@ export default function AIChatWidget() {
 
       {/* Chat Window */}
       <div 
-        className={`fixed z-[90] transition-all duration-300 transform origin-bottom-right flex flex-col bg-card shadow-2xl border border-border-default overflow-hidden
+        className={`fixed z-[90] transition-all duration-300 transform origin-bottom-right flex flex-col bg-card shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-border-default/50 overflow-hidden
         ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
         
         /* Mobile specific styling */
         bottom-0 right-0 w-full h-[85vh] rounded-t-3xl 
         
         /* Desktop specific styling */
-        lg:bottom-8 lg:right-8 lg:w-[380px] lg:h-[600px] lg:rounded-3xl
+        lg:bottom-6 lg:right-6 lg:w-[380px] lg:h-[550px] lg:max-h-[80vh] lg:rounded-2xl
         `}
       >
         {/* Header */}
-        <div className="bg-sidebar p-4 flex items-center justify-between text-white shrink-0 shadow-md z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-inner relative">
+        <div className="bg-sidebar p-4 flex items-center justify-between text-white shrink-0 z-10 border-b border-white/5 relative overflow-hidden">
+          {/* Subtle gradient overlay for premium feel */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/10 pointer-events-none"></div>
+          
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg relative border border-white/10">
               <span className="material-symbols-outlined text-[24px]">smart_toy</span>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-sidebar rounded-full"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-sidebar rounded-full shadow-sm"></div>
             </div>
             <div>
-              <h3 className="font-bold text-[15px] leading-tight">Asisten Suara Kasir</h3>
-              <p className="text-[11px] text-white/70 font-medium">Online • Siap membantu</p>
+              <h3 className="font-bold text-[15px] leading-tight tracking-wide">Asisten Suara Kasir</h3>
+              <p className="text-[11px] text-white/80 font-medium mt-0.5">Online • Siap membantu</p>
             </div>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-90 transition-all relative z-10 focus:outline-none focus:ring-2 focus:ring-white/30"
+            aria-label="Tutup Chat"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -149,9 +162,10 @@ export default function AIChatWidget() {
         </div>
 
         {/* Input Area */}
-        <div className="p-3 bg-white border-t border-border-soft shrink-0">
+        <div className="p-3 bg-white border-t border-border-soft shrink-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)] z-10">
           <form onSubmit={handleSend} className="relative flex items-end">
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -161,19 +175,23 @@ export default function AIChatWidget() {
                 }
               }}
               placeholder="Tanya sesuatu tentang aplikasi..."
-              className="w-full bg-[#f1f3f5] text-text-primary rounded-2xl pl-4 pr-12 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none custom-scrollbar"
-              rows={input.split('\n').length > 1 ? Math.min(input.split('\n').length, 4) : 1}
+              className="w-full bg-[#f4f6f8] text-text-primary rounded-2xl pl-4 pr-12 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none overflow-y-auto custom-scrollbar transition-shadow duration-200"
+              style={{ minHeight: '44px', maxHeight: '120px' }}
+              rows={1}
             />
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="absolute right-1.5 bottom-1.5 w-9 h-9 flex items-center justify-center bg-primary text-white rounded-full hover:bg-primary-hover active:scale-90 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-primary"
+              className="absolute right-1.5 bottom-1.5 w-9 h-9 flex items-center justify-center bg-primary text-white rounded-full hover:bg-primary-hover active:scale-90 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-primary shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px] ml-0.5">send</span>
             </button>
           </form>
-          <div className="text-center mt-2">
-            <span className="text-[10px] text-text-muted font-medium">AI Support System - Suara Kasir</span>
+          <div className="text-center mt-2.5">
+            <span className="text-[10px] text-text-muted font-medium flex items-center justify-center gap-1">
+              <span className="material-symbols-outlined text-[12px]">bolt</span>
+              AI Support System - Suara Kasir
+            </span>
           </div>
         </div>
       </div>
