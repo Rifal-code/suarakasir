@@ -9,6 +9,7 @@ import RecentOrders from "@/components/dashboard/RecentOrders";
 import TopSellingCard from "@/components/dashboard/TopSellingCard";
 import useSWR from "swr";
 import { fetchApi } from "@/lib/api";
+import { mapApiOrder } from "@/lib/orderUtils";
 import { useToast } from "@/components/ui/ToastContext";
 
 import { SkeletonSummaryCard, SkeletonBarChart, SkeletonTable } from "@/components/ui/SkeletonCards";
@@ -112,19 +113,10 @@ export default function Dashboard() {
     };
   });
 
-  // 2. Recent Orders
-  const recentOrders = Array.isArray(data?.orders) ? data.orders.map((o: any) => ({
-    id: `#${o.id?.substring(0, 6) || 'XXXX'}`,
-    rawId: o.id,
-    product: o.items?.[0]?.product_name || "Produk",
-    items: o.items || [],
-    date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID'),
-    price: formatRp(o.items?.[0]?.unit_price || 0),
-    amount: formatRp(o.total_amount),
-    status: o.status === 1 ? "Selesai" : "Pending",
-    statusColor: o.status === 1 ? "success" : "warning",
-    icon: o.status === 1 ? "receipt_long" : "pending_actions"
-  })) : undefined;
+  // 2. Recent Orders (using shared utility)
+  const recentOrders = Array.isArray(data?.orders)
+    ? data.orders.map((o: any) => mapApiOrder(o, 'short'))
+    : undefined;
 
   return (
     <div className={`animate-in fade-in slide-in-from-bottom-4 duration-500 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'} transition-opacity`}>

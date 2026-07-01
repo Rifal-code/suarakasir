@@ -2,29 +2,11 @@
 
 import React, { useState } from "react";
 import { fetchApi, swrFetcher } from "@/lib/api";
+import { mapApiOrder, type MappedOrder, type OrderItem } from "@/lib/orderUtils";
 import useSWR, { mutate } from "swr";
 import { useToast } from "@/components/ui/ToastContext";
 import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
-
-type OrderItem = {
-  product_name: string;
-  quantity: number;
-  unit_price?: number;
-};
-
-type Order = {
-  id: string;
-  rawId: string;
-  product: string;
-  items?: OrderItem[];
-  date: string;
-  price: string;
-  amount: string;
-  status: string;
-  statusColor: string;
-  icon: string;
-};
 
 import { SkeletonTable } from "@/components/ui/SkeletonCards";
 
@@ -38,18 +20,9 @@ export default function HistoryPage() {
     onError: () => toast.error("Gagal memuat riwayat transaksi.")
   });
 
-  const orders: Order[] = swrData ? swrData.data.map((o: any) => ({
-    id: `#${o.id?.substring(0,6) || 'XXXX'}`,
-    rawId: o.id,
-    product: o.items?.[0]?.product_name || "Produk",
-    items: o.items || [],
-    date: new Date(o.created_at || Date.now()).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    price: `Rp ${Number(o.items?.[0]?.unit_price || 0).toLocaleString('id-ID')}`,
-    amount: `Rp ${Number(o.total_amount).toLocaleString('id-ID')}`,
-    status: "Selesai",
-    statusColor: "success",
-    icon: "receipt_long"
-  })) : [];
+  const orders: MappedOrder[] = swrData
+    ? swrData.data.map((o: any) => mapApiOrder(o, 'full'))
+    : [];
 
   const filteredOrders = orders.filter(o => 
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -139,6 +112,7 @@ export default function HistoryPage() {
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
                         order.statusColor === 'info' ? 'bg-info/10 text-info' :
                         order.statusColor === 'success' ? 'bg-success/10 text-success' :
+                        order.statusColor === 'warning' ? 'bg-amber-100 text-amber-600' :
                         'bg-danger/10 text-danger'
                       }`}>
                         {order.status}

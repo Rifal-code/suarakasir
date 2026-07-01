@@ -3,28 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
-
-type OrderItem = {
-  product_name: string;
-  quantity: number;
-  unit_price?: number;
-};
-
-type Order = {
-  id: string;
-  rawId?: string;
-  product: string;
-  items?: OrderItem[];
-  date: string;
-  price: string;
-  amount: string;
-  status: string;
-  statusColor: string;
-  icon: string;
-};
+import { type MappedOrder } from "@/lib/orderUtils";
 
 type RecentOrdersProps = {
-  orders?: Order[];
+  orders?: MappedOrder[];
   onRefresh?: () => void;
 };
 
@@ -106,6 +88,7 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
                       order.statusColor === 'info' ? 'bg-info/10 text-info' :
                       order.statusColor === 'success' ? 'bg-success/10 text-success' :
+                      order.statusColor === 'warning' ? 'bg-amber-100 text-amber-600' :
                       'bg-danger/10 text-danger'
                     }`}>
                       {order.status}
