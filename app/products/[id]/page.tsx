@@ -370,7 +370,7 @@ export default function ProductDetailPage() {
         productId={productId}
         initialData={{
           name: product.name,
-          price: product.price,
+          price: Number(product.price),
           stock: product.stock,
           description: product.description,
           imageUrl: product.image_url,
