@@ -21,6 +21,7 @@ export type MappedOrder = {
   status: string;
   statusColor: string;
   icon: string;
+  createdAt: string;
 };
 
 const formatRp = (val: number) => `Rp ${val.toLocaleString('id-ID')}`;
@@ -61,5 +62,6 @@ export function mapApiOrder(o: any, dateStyle: 'short' | 'full' = 'short'): Mapp
     status: label,
     statusColor: color,
     icon,
+    createdAt: o.created_at || new Date().toISOString(),
   };
 }

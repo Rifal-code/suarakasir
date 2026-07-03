@@ -4,6 +4,7 @@ import Link from "next/link";
 import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
 import { type MappedOrder } from "@/lib/orderUtils";
+import OrderFilter, { type FilterState } from "@/components/history/OrderFilter";
 
 type RecentOrdersProps = {
   orders?: MappedOrder[];
@@ -13,21 +14,64 @@ type RecentOrdersProps = {
 export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    status: "all",
+    dateRange: "all",
+    product: "all",
+  });
 
-  // Fallback data if orders are missing
-  const data = orders && orders.length > 0 ? orders : [];
+  const allOrders = orders || [];
+  
+  // Extract unique products for dropdown
+  const availableProducts = Array.from(new Set(
+    allOrders.flatMap(o => o.items.map(i => i.product_name))
+  )).filter(Boolean).sort();
+
+  // Filter Logic
+  const filteredOrders = allOrders.filter(o => {
+    // Status Filter
+    if (filters.status !== "all" && o.status.toLowerCase() !== filters.status) return false;
+    
+    // Product Filter
+    if (filters.product !== "all" && !o.items.some(i => i.product_name === filters.product)) return false;
+    
+    // Date Filter (simple frontend check based on parsed date)
+    if (filters.dateRange !== "all") {
+      const orderDate = new Date(o.createdAt);
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (filters.dateRange === "today") {
+        if (orderDate < todayStart) return false;
+      } else if (filters.dateRange === "7d") {
+        const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (orderDate < sevenDaysAgo) return false;
+      } else if (filters.dateRange === "30d") {
+        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (orderDate < thirtyDaysAgo) return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Limit to 5 for Dashboard
+  const displayData = filteredOrders.slice(0, 5);
 
   return (
     <div className="bg-card rounded-3xl p-6 border border-border-soft shadow-sm h-full">
-      <div className="flex justify-between items-start mb-4 md:mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
         <div>
           <h3 className="text-lg font-bold text-text-primary">Pesanan Terbaru</h3>
           <p className="text-xs text-text-secondary mt-1">Lacak data pesanan terbaru dan informasi lainnya.</p>
         </div>
-        <Link href="/history" className="flex shrink-0 items-center gap-1 px-4 py-2 bg-background border border-border-default rounded-full text-xs font-semibold hover:bg-border-soft transition-colors text-text-primary">
-          Lihat Semua
-          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <OrderFilter filters={filters} onChange={setFilters} availableProducts={availableProducts} />
+          <Link href="/history" className="flex shrink-0 items-center gap-1 px-4 py-2 bg-background border border-border-default rounded-full text-xs font-semibold hover:bg-border-soft transition-colors text-text-primary hidden sm:flex">
+            Lihat Semua
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </Link>
+        </div>
       </div>
 
       <div className="md:hidden flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full w-fit mb-3 animate-pulse">
@@ -35,7 +79,7 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
         Geser tabel untuk melihat detail
       </div>
 
-      {data.length === 0 ? (
+      {displayData.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-48 text-text-muted">
           <span className="material-symbols-outlined text-[40px] mb-2 opacity-30">receipt_long</span>
           <p className="text-sm">Belum ada pesanan terbaru</p>
@@ -54,7 +98,7 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
               </tr>
             </thead>
             <tbody>
-              {data.map((order, idx) => (
+              {displayData.map((order, idx) => (
                 <tr 
                   key={idx} 
                   className="border-b border-border-soft/50 last:border-0 hover:bg-background/50 transition-colors cursor-pointer"

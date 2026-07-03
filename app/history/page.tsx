@@ -7,6 +7,8 @@ import useSWR, { mutate } from "swr";
 import { useToast } from "@/components/ui/ToastContext";
 import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
+import OrderFilter, { type FilterState } from "@/components/history/OrderFilter";
+import Pagination from "@/components/ui/Pagination";
 
 import { SkeletonTable } from "@/components/ui/SkeletonCards";
 
@@ -15,6 +17,15 @@ export default function HistoryPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [filters, setFilters] = useState<FilterState>({
+    status: "all",
+    dateRange: "all",
+    product: "all",
+  });
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: swrData, isLoading: loading } = useSWR("/api/orders?limit=100", swrFetcher, {
     onError: () => toast.error("Gagal memuat riwayat transaksi.")
@@ -23,11 +34,59 @@ export default function HistoryPage() {
   const orders: MappedOrder[] = swrData
     ? swrData.data.map((o: any) => mapApiOrder(o, 'full'))
     : [];
+    
+  // Extract unique products for dropdown
+  const availableProducts = Array.from(new Set(
+    orders.flatMap(o => o.items.map(i => i.product_name))
+  )).filter(Boolean).sort();
 
-  const filteredOrders = orders.filter(o => 
-    o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (o.items && o.items.some(i => i.product_name.toLowerCase().includes(searchQuery.toLowerCase())))
+  // 1. First apply Filters and Search
+  const filteredOrders = orders.filter(o => {
+    // Search Filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchSearch = o.id.toLowerCase().includes(query) || 
+                          (o.items && o.items.some(i => i.product_name.toLowerCase().includes(query)));
+      if (!matchSearch) return false;
+    }
+    
+    // Status Filter
+    if (filters.status !== "all" && o.status.toLowerCase() !== filters.status) return false;
+    
+    // Product Filter
+    if (filters.product !== "all" && !o.items.some(i => i.product_name === filters.product)) return false;
+    
+    // Date Filter (simple frontend check based on parsed date)
+    if (filters.dateRange !== "all") {
+      const orderDate = new Date(o.createdAt);
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (filters.dateRange === "today") {
+        if (orderDate < todayStart) return false;
+      } else if (filters.dateRange === "7d") {
+        const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (orderDate < sevenDaysAgo) return false;
+      } else if (filters.dateRange === "30d") {
+        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (orderDate < thirtyDaysAgo) return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // 2. Then apply Pagination
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
 
   return (
     <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1200px] mx-auto w-full">
@@ -38,8 +97,15 @@ export default function HistoryPage() {
           <p className="text-sm text-text-secondary mt-1">Daftar lengkap riwayat pesanan dan transaksi Anda.</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="relative w-full md:w-64">
+        <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center gap-3">
+          <div className="w-full md:w-auto">
+            <OrderFilter 
+              filters={filters} 
+              onChange={setFilters} 
+              availableProducts={availableProducts} 
+            />
+          </div>
+          <div className="relative w-full md:w-64 shrink-0">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">search</span>
             <input 
               type="text" 
@@ -52,7 +118,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-3xl p-6 md:p-8 border border-border-soft shadow-sm min-h-[50vh]">
+      <div className="bg-card rounded-3xl p-6 md:p-8 border border-border-soft shadow-sm min-h-[50vh] flex flex-col">
         {loading ? (
           <SkeletonTable />
         ) : filteredOrders.length === 0 ? (
@@ -80,7 +146,7 @@ export default function HistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order, idx) => (
+                {paginatedOrders.map((order, idx) => (
                   <tr 
                     key={idx} 
                     className="border-b border-border-soft/50 last:border-0 hover:bg-background/50 transition-colors cursor-pointer"
@@ -134,6 +200,12 @@ export default function HistoryPage() {
               </tbody>
             </table>
           </div>
+          
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage} 
+          />
         </div>
         )}
       </div>
