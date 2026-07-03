@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
 import AlertDialog from "@/components/ui/AlertDialog";
+import { resolveOrderStatus } from "@/lib/orderUtils";
 
 interface OrderDetailModalProps {
   orderId: string;
@@ -78,6 +79,8 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
     timeStyle: 'short'
   });
 
+  const statusInfo = resolveOrderStatus(order.status);
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex flex-col justify-end md:items-center md:justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 p-0 md:p-6" onClick={onClose}>
@@ -110,7 +113,13 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="text-[11px] text-white/60 font-medium uppercase tracking-wider">Status</span>
-                <span className="text-xs font-bold px-2.5 py-1 bg-success/20 text-green-400 rounded-full">Selesai</span>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  statusInfo.color === 'success' 
+                    ? 'bg-success/20 text-green-400' 
+                    : 'bg-warning/20 text-yellow-400'
+                }`}>
+                  {statusInfo.label}
+                </span>
               </div>
             </div>
 

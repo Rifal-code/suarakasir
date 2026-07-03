@@ -98,7 +98,7 @@ export default function ProfilePage() {
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
           <div className="w-24 h-24 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-sidebar shrink-0 overflow-hidden">
             <img 
-              src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(formData.name || "User")}`} 
+              src={`https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(formData.name || "User")}`} 
               alt="Profile" 
               className="w-full h-full object-cover bg-gray-100"
             />

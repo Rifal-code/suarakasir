@@ -81,7 +81,7 @@ export default function TopBar({ onMicClick }: TopBarProps) {
         >
           <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden border border-gray-200">
             <img 
-              src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(userName)}`} 
+              src={`https://api.dicebear.com/9.x/micah/svg?seed=${encodeURIComponent(userName)}`} 
               alt="Profile" 
               className="w-full h-full object-cover"
             />
