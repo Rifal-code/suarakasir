@@ -191,23 +191,23 @@ export default function ProductDetailPage() {
             <p className="text-sm text-text-muted italic">Belum ada deskripsi.</p>
           )}
         </div>
-      </div>
 
-      {/* Sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border-soft px-4 py-3 flex items-center gap-2.5 lg:hidden">
-        <button 
-          onClick={() => setIsEditModalOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface-dark text-white rounded-xl text-sm font-bold active:scale-[0.97] transition-transform"
-        >
-          <span className="material-symbols-outlined text-[16px]">edit_square</span>
-          Edit Produk
-        </button>
-        <button 
-          onClick={() => setIsDeleteDialogOpen(true)}
-          className="py-2.5 px-4 border border-border-default text-text-secondary rounded-xl text-sm font-bold active:scale-[0.97] transition-transform"
-        >
-          <span className="material-symbols-outlined text-[16px]">delete</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="mt-8 pt-6 border-t border-dashed border-border-soft flex items-center gap-3">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-surface-dark text-white rounded-2xl text-[15px] font-bold shadow-lg hover:bg-black active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">edit_square</span>
+            Edit Produk
+          </button>
+          <button 
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="flex items-center justify-center py-3.5 px-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 hover:bg-red-100 active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
       </div>
     </div>
   );
