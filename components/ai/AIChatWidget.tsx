@@ -8,7 +8,7 @@ type Message = {
   text: string;
 };
 
-export default function AIChatWidget() {
+export default function AIChatWidget({ isTransactionPage = false }: { isTransactionPage?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", text: "Halo! Saya Asisten Suara Kasir. Ada yang bisa saya bantu terkait penggunaan aplikasi ini?" }
@@ -86,7 +86,7 @@ export default function AIChatWidget() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed z-[80] right-4 lg:right-8 transition-all duration-300 ${
+        className={`fixed z-[80] right-6 lg:right-8 transition-all duration-300 cursor-pointer ${
           isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
         } bottom-24 lg:bottom-8 w-14 h-14 bg-sidebar rounded-full flex items-center justify-center text-white shadow-xl shadow-sidebar/30 hover:scale-110 active:scale-95 group`}
       >
@@ -122,7 +122,7 @@ export default function AIChatWidget() {
           </div>
           <button 
             onClick={() => setIsOpen(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-90 transition-all relative z-10 focus:outline-none focus:ring-2 focus:ring-white/30"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-90 transition-all relative z-10 focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer"
             aria-label="Tutup Chat"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -182,7 +182,7 @@ export default function AIChatWidget() {
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="absolute right-1.5 bottom-1.5 w-9 h-9 flex items-center justify-center bg-primary text-white rounded-full hover:bg-primary-hover active:scale-90 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-primary shadow-sm"
+              className="absolute right-1.5 bottom-1.5 w-9 h-9 flex items-center justify-center bg-primary text-white rounded-full hover:bg-primary-hover active:scale-90 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-primary shadow-sm cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px] ml-0.5">send</span>
             </button>
@@ -199,7 +199,7 @@ export default function AIChatWidget() {
       {/* Mobile Backdrop when open */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[85] lg:hidden animate-in fade-in"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in"
           onClick={() => setIsOpen(false)}
         />
       )}

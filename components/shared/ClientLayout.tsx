@@ -54,7 +54,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </div>
 
       {/* AI Chat Widget - Global Floating Action */}
-      <AIChatWidget />
+      <AIChatWidget isTransactionPage={pathname === "/transaction"} />
 
       {/* Voice Order Overlay */}
       {showVoiceSheet && (
