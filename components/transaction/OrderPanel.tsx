@@ -17,8 +17,8 @@ interface OrderPanelProps {
   cart: CartItemType[];
   onUpdateQty: (id: string, newQty: number) => void;
   onRemoveItem: (id: string) => void;
-  onCheckout: () => void;
-  isSubmitting: boolean;
+  onCheckout: (status: number) => void;
+  submitType: number | null;
 }
 
 export default function OrderPanel({
@@ -26,7 +26,7 @@ export default function OrderPanel({
   onUpdateQty,
   onRemoveItem,
   onCheckout,
-  isSubmitting,
+  submitType,
 }: OrderPanelProps) {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const total = subtotal;
@@ -97,17 +97,28 @@ export default function OrderPanel({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-3 pt-2">
           <button
-            onClick={onCheckout}
-            disabled={cart.length === 0 || isSubmitting}
-            className={`py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all ${
-              cart.length === 0 || isSubmitting
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-primary text-white shadow-primary/30 active:scale-95 hover:bg-primary-hover"
+            onClick={() => onCheckout(0)}
+            disabled={cart.length === 0 || submitType !== null}
+            className={`py-3 rounded-xl font-bold text-[13px] transition-all border-2 ${
+              cart.length === 0 || submitType !== null
+                ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                : "border-primary text-primary hover:bg-primary/5 active:scale-95 cursor-pointer"
             }`}
           >
-            {isSubmitting ? "Memproses..." : "Buat Pesanan"}
+            {submitType === 0 ? "Proses..." : "Simpan Bill"}
+          </button>
+          <button
+            onClick={() => onCheckout(1)}
+            disabled={cart.length === 0 || submitType !== null}
+            className={`py-3 rounded-xl font-bold text-[13px] shadow-lg transition-all ${
+              cart.length === 0 || submitType !== null
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-primary text-white shadow-primary/30 active:scale-95 hover:bg-primary-hover cursor-pointer"
+            }`}
+          >
+            {submitType === 1 ? "Proses..." : "Terima Bayaran"}
           </button>
         </div>
       </div>

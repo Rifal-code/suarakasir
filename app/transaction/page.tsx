@@ -25,7 +25,7 @@ export default function TransactionPage() {
   });
   const products: Product[] = swrData?.data || [];
   const [cart, setCart] = useState<CartItemType[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitType, setSubmitType] = useState<number | null>(null);
 
   // Handle voice order items
   useEffect(() => {
@@ -136,16 +136,17 @@ export default function TransactionPage() {
     setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (status: number) => {
     if (cart.length === 0) return;
 
-    setIsSubmitting(true);
+    setSubmitType(status);
     try {
       const payload = {
         items: cart.map(item => ({
           product_id: item.product_id,
           quantity: item.qty
-        }))
+        })),
+        status: status
       };
 
       const { response, data } = await fetchApi("/api/orders", {
@@ -166,7 +167,7 @@ export default function TransactionPage() {
     } catch (error) {
       toast.error("Terjadi kesalahan jaringan saat membuat pesanan");
     } finally {
-      setIsSubmitting(false);
+      setSubmitType(null);
     }
   };
 
@@ -311,12 +312,12 @@ export default function TransactionPage() {
           onUpdateQty={updateCartQty}
           onRemoveItem={removeCartItem}
           onCheckout={handleCheckout}
-          isSubmitting={isSubmitting}
+          submitType={submitType}
         />
       </div>
 
       {/* Mobile: Floating Cart Button */}
-      <div className="xl:hidden fixed bottom-24 right-6 z-40">
+      <div className="xl:hidden fixed bottom-40 right-6 z-40">
         <button
           onClick={() => setShowPanel(!showPanel)}
           className="w-14 h-14 bg-primary text-white rounded-full shadow-xl shadow-primary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all relative"
@@ -349,7 +350,7 @@ export default function TransactionPage() {
                 onUpdateQty={updateCartQty}
                 onRemoveItem={removeCartItem}
                 onCheckout={handleCheckout}
-                isSubmitting={isSubmitting}
+                submitType={submitType}
               />
             </div>
           </div>
