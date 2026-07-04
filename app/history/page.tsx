@@ -16,6 +16,7 @@ export default function HistoryPage() {
   const toast = useToast();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
   const [filters, setFilters] = useState<FilterState>({
@@ -30,6 +31,38 @@ export default function HistoryPage() {
   const { data: swrData, isLoading: loading } = useSWR("/api/orders?limit=100", swrFetcher, {
     onError: () => toast.error("Gagal memuat riwayat transaksi.")
   });
+
+  const handleMarkComplete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (updatingOrderId) return;
+    setUpdatingOrderId(id);
+    try {
+      // Fetch order detail to get items (PUT requires items)
+      const { response: detailRes, data: detailData } = await fetchApi(`/api/orders/${id}`);
+      if (!detailRes.ok || !detailData.success) {
+        toast.error("Gagal memuat detail pesanan.");
+        return;
+      }
+      const itemsPayload = (detailData.data.items || []).map((item: any) => ({
+        product_id: item.product_id,
+        quantity: item.quantity
+      }));
+      const { response, data } = await fetchApi(`/api/orders/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ items: itemsPayload, status: 1 })
+      });
+      if (response.ok && data.success) {
+        toast.success("Pesanan berhasil ditandai lunas.");
+        mutate("/api/orders?limit=100");
+      } else {
+        toast.error(data.message || "Gagal mengubah status pesanan.");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan jaringan.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
 
   const orders: MappedOrder[] = swrData
     ? swrData.data.map((o: any) => mapApiOrder(o, 'full'))
@@ -185,15 +218,36 @@ export default function HistoryPage() {
                       </span>
                     </td>
                     <td className="py-4 align-middle text-right">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrderId(order.rawId);
-                        }}
-                        className="p-1.5 rounded-lg bg-background hover:bg-primary hover:text-white border border-border-soft hover:border-primary transition-colors text-text-secondary"
-                      >
-                        <span className="material-symbols-outlined text-[18px] block">chevron_right</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {order.rawStatus === 0 && (
+                          <button
+                            onClick={(e) => handleMarkComplete(e, order.rawId)}
+                            disabled={updatingOrderId === order.rawId}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              updatingOrderId === order.rawId
+                                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                : "bg-green-50 text-green-600 hover:bg-green-500 hover:text-white border border-green-200 hover:border-green-500"
+                            }`}
+                            title="Tandai Lunas"
+                          >
+                            {updatingOrderId === order.rawId ? (
+                              <span className="material-symbols-outlined text-[18px] block animate-spin">progress_activity</span>
+                            ) : (
+                              <span className="material-symbols-outlined text-[18px] block">check</span>
+                            )}
+                          </button>
+                        )}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrderId(order.rawId);
+                          }}
+                          className="p-1.5 rounded-lg bg-background hover:bg-primary hover:text-white border border-border-soft hover:border-primary transition-colors text-text-secondary cursor-pointer"
+                          title="Detail Pesanan"
+                        >
+                          <span className="material-symbols-outlined text-[18px] block">chevron_right</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

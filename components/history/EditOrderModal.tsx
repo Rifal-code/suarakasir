@@ -15,6 +15,7 @@ export default function EditOrderModal({ order, onClose, onRefresh }: EditOrderM
   const [items, setItems] = useState<any[]>(
     order.items ? JSON.parse(JSON.stringify(order.items)) : []
   );
+  const [status, setStatus] = useState<number>(order.rawStatus !== undefined ? order.rawStatus : 0);
   const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();
 
@@ -41,7 +42,8 @@ export default function EditOrderModal({ order, onClose, onRefresh }: EditOrderM
         items: items.map(item => ({
           product_id: item.product_id,
           quantity: item.quantity
-        }))
+        })),
+        status: status
       };
 
       const { response, data } = await fetchApi(`/api/orders/${order.id}`, {
@@ -66,7 +68,7 @@ export default function EditOrderModal({ order, onClose, onRefresh }: EditOrderM
   const currentTotal = items.reduce((sum, item) => sum + (item.quantity * Number(item.unit_price)), 0);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end md:items-center md:justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-0 md:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-0 md:p-6" onClick={onClose}>
       
       <div 
         className="bg-card w-full max-w-lg md:rounded-[32px] rounded-t-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 max-h-[90vh]"
@@ -92,8 +94,23 @@ export default function EditOrderModal({ order, onClose, onRefresh }: EditOrderM
           <div className="bg-blue-50 text-blue-600 p-4 rounded-2xl flex items-start gap-3 border border-blue-100 mb-2">
             <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">info</span>
             <p className="text-xs font-medium leading-relaxed">
-              Anda dapat mengubah jumlah (qty) produk atau menghapus produk dari daftar ini. Jika Anda ingin menambah produk baru, harap buat pesanan baru.
+              Anda dapat mengubah status, jumlah (qty), atau menghapus produk. Jika Anda ingin menambah produk baru, harap buat pesanan baru.
             </p>
+          </div>
+
+          <div className="flex flex-col gap-2 mb-2">
+            <label className="text-sm font-bold text-text-primary px-1">Status Pesanan</label>
+            <div className="relative">
+              <select
+                value={status}
+                onChange={(e) => setStatus(Number(e.target.value))}
+                className="w-full bg-card p-3 rounded-xl border border-border-default focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold appearance-none cursor-pointer"
+              >
+                <option value={0}>Pending (Belum Lunas)</option>
+                <option value={1}>Selesai (Sudah Lunas)</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">expand_more</span>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">

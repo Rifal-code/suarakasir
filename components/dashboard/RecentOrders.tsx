@@ -5,6 +5,8 @@ import OrderDetailModal from "@/components/history/OrderDetailModal";
 import EditOrderModal from "@/components/history/EditOrderModal";
 import { type MappedOrder } from "@/lib/orderUtils";
 import OrderFilter, { type FilterState } from "@/components/history/OrderFilter";
+import { fetchApi } from "@/lib/api";
+import { useToast } from "@/components/ui/ToastContext";
 
 type RecentOrdersProps = {
   orders?: MappedOrder[];
@@ -12,6 +14,8 @@ type RecentOrdersProps = {
 };
 
 export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
+  const toast = useToast();
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [filters, setFilters] = useState<FilterState>({
@@ -19,6 +23,38 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
     dateRange: "all",
     product: "all",
   });
+
+  const handleMarkComplete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (updatingOrderId) return;
+    setUpdatingOrderId(id);
+    try {
+      // Fetch order detail to get items (PUT requires items)
+      const { response: detailRes, data: detailData } = await fetchApi(`/api/orders/${id}`);
+      if (!detailRes.ok || !detailData.success) {
+        toast.error("Gagal memuat detail pesanan.");
+        return;
+      }
+      const itemsPayload = (detailData.data.items || []).map((item: any) => ({
+        product_id: item.product_id,
+        quantity: item.quantity
+      }));
+      const { response, data } = await fetchApi(`/api/orders/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ items: itemsPayload, status: 1 })
+      });
+      if (response.ok && data.success) {
+        toast.success("Pesanan berhasil ditandai lunas.");
+        if (onRefresh) onRefresh();
+      } else {
+        toast.error(data.message || "Gagal mengubah status pesanan.");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan jaringan.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
 
   const allOrders = orders || [];
   
@@ -139,15 +175,38 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
                     </span>
                   </td>
                   <td className="py-4 align-middle text-right">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (order.rawId) setSelectedOrderId(order.rawId);
-                      }}
-                      className="p-1.5 rounded-lg bg-background hover:bg-primary hover:text-white border border-border-soft hover:border-primary transition-colors text-text-secondary"
-                    >
-                      <span className="material-symbols-outlined text-[18px] block">chevron_right</span>
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {order.rawStatus === 0 && (
+                        <button
+                          onClick={(e) => {
+                            if (order.rawId) handleMarkComplete(e, order.rawId);
+                          }}
+                          disabled={updatingOrderId === order.rawId}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            updatingOrderId === order.rawId
+                              ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                              : "bg-green-50 text-green-600 hover:bg-green-500 hover:text-white border border-green-200 hover:border-green-500"
+                          }`}
+                          title="Tandai Lunas"
+                        >
+                          {updatingOrderId === order.rawId ? (
+                            <span className="material-symbols-outlined text-[18px] block animate-spin">progress_activity</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-[18px] block">check</span>
+                          )}
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (order.rawId) setSelectedOrderId(order.rawId);
+                        }}
+                        className="p-1.5 rounded-lg bg-background hover:bg-primary hover:text-white border border-border-soft hover:border-primary transition-colors text-text-secondary cursor-pointer"
+                        title="Detail Pesanan"
+                      >
+                        <span className="material-symbols-outlined text-[18px] block">chevron_right</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

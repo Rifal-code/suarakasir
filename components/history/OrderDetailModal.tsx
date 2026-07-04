@@ -17,6 +17,7 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const toast = useToast();
 
@@ -61,6 +62,31 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
     }
   };
 
+  const confirmComplete = async () => {
+    setIsCompleting(true);
+    try {
+      const itemsPayload = (order.items || []).map((item: any) => ({
+        product_id: item.product_id,
+        quantity: item.quantity
+      }));
+      const { response, data } = await fetchApi(`/api/orders/${orderId}`, {
+        method: "PUT",
+        body: JSON.stringify({ items: itemsPayload, status: 1 })
+      });
+      if (response.ok && data.success) {
+        toast.success("Pesanan berhasil ditandai lunas.");
+        onRefresh();
+        onClose();
+      } else {
+        toast.error(data.message || "Gagal mengubah status pesanan.");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan jaringan.");
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -83,7 +109,7 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex flex-col justify-end md:items-center md:justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 p-0 md:p-6" onClick={onClose}>
+      <div className="fixed inset-0 z-[100] flex flex-col justify-end md:items-center md:justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 p-0 md:p-6" onClick={onClose}>
         
         <div 
           className="bg-card w-full max-w-lg md:rounded-[32px] rounded-t-[32px] shadow-2xl flex flex-col animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 max-h-[90vh]"
@@ -156,26 +182,42 @@ export default function OrderDetailModal({ orderId, onClose, onEdit, onRefresh }
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-border-soft bg-background rounded-b-[32px] flex items-center gap-3">
-            <button
-              onClick={() => setIsAlertOpen(true)}
-              disabled={isDeleting}
-              className="flex-1 py-3.5 bg-red-50 text-red-600 rounded-2xl font-bold text-sm border border-red-100 hover:bg-red-100 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
-            >
-              {isDeleting ? (
-                <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-              ) : (
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-              )}
-              Hapus
-            </button>
-            <button
-              onClick={() => onEdit(order)}
-              className="flex-1 py-3.5 bg-sidebar text-white rounded-2xl font-bold text-sm shadow-md hover:bg-black transition-all flex justify-center items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
-              Edit Pesanan
-            </button>
+          <div className="p-6 border-t border-border-soft bg-background rounded-b-[32px] flex flex-col md:flex-row items-center gap-3">
+            {order.status === 0 && (
+              <button
+                onClick={confirmComplete}
+                disabled={isCompleting || isDeleting}
+                className="w-full md:w-auto md:flex-1 py-3.5 bg-primary text-white rounded-2xl font-bold text-sm shadow-md hover:bg-primary-hover transition-all flex justify-center items-center gap-2"
+              >
+                {isCompleting ? (
+                  <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                )}
+                Tandai Lunas
+              </button>
+            )}
+            <div className="flex w-full md:w-auto md:flex-1 gap-3">
+              <button
+                onClick={() => setIsAlertOpen(true)}
+                disabled={isDeleting || isCompleting}
+                className="flex-1 py-3.5 bg-red-50 text-red-600 rounded-2xl font-bold text-sm border border-red-100 hover:bg-red-100 transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                )}
+                Hapus
+              </button>
+              <button
+                onClick={() => onEdit(order)}
+                className="flex-1 py-3.5 bg-sidebar text-white rounded-2xl font-bold text-sm shadow-md hover:bg-black transition-all flex justify-center items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Edit
+              </button>
+            </div>
           </div>
 
         </div>
