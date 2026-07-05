@@ -115,7 +115,7 @@ export default function Dashboard() {
 
   // 2. Recent Orders (using shared utility)
   const recentOrders = Array.isArray(data?.orders)
-    ? data.orders.map((o: any) => mapApiOrder(o, 'short'))
+    ? data.orders.map((o: any) => mapApiOrder(o, 'full'))
     : undefined;
 
   return (

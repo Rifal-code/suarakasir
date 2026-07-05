@@ -122,13 +122,13 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
         </div>
       ) : (
         <div className="overflow-x-auto pb-2">
-          <table className="w-full text-left border-collapse min-w-[600px] md:min-w-full">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="text-[11px] text-text-muted border-b border-border-soft">
-                <th className="pb-4 font-semibold font-sans w-20">Order ID</th>
+                <th className="pb-4 font-semibold font-sans w-24">Order ID</th>
                 <th className="pb-4 font-semibold font-sans w-1/3">Nama Produk</th>
-                <th className="pb-4 font-semibold font-sans">Tanggal</th>
-                <th className="pb-4 font-semibold font-sans">Total Tagihan</th>
+                <th className="pb-4 font-semibold font-sans whitespace-nowrap">Tanggal</th>
+                <th className="pb-4 font-semibold font-sans whitespace-nowrap">Total Tagihan</th>
                 <th className="pb-4 font-semibold font-sans">Status</th>
                 <th className="pb-4 font-semibold font-sans text-right">Aksi</th>
               </tr>
@@ -160,8 +160,8 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 text-xs font-semibold text-text-secondary align-middle">{order.date}</td>
-                  <td className="py-4 text-sm font-bold text-primary align-middle">
+                  <td className="py-4 text-xs font-semibold text-text-secondary align-middle whitespace-nowrap">{order.date}</td>
+                  <td className="py-4 text-sm font-bold text-primary align-middle whitespace-nowrap">
                     {order.amount}
                   </td>
                   <td className="py-4 align-middle">
