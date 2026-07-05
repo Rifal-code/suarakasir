@@ -83,25 +83,23 @@ export default function AIChatWidget({ isTransactionPage = false }: { isTransact
 
   return (
     <>
-      {/* Floating Action Button */}
+      {/* Floating Action Button - z-50 on mobile so it stays below cart panel (z-60), z-80 on desktop */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed z-[80] right-6 lg:right-8 transition-all duration-300 cursor-pointer ${
+        className={`fixed z-[50] lg:z-[80] right-6 lg:right-8 transition-all duration-300 cursor-pointer ${
           isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
         } bottom-24 lg:bottom-8 w-14 h-14 bg-sidebar rounded-full flex items-center justify-center text-white shadow-xl shadow-sidebar/30 hover:scale-110 active:scale-95 group`}
       >
         <span className="material-symbols-outlined text-[28px] group-hover:animate-pulse">smart_toy</span>
       </button>
 
-      {/* Chat Window */}
+      {/* Chat Window - z-110 so it's above the backdrop (z-105) */}
       <div 
-        className={`fixed z-[90] transition-all duration-300 transform origin-bottom-right flex flex-col bg-card shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-border-default/50 overflow-hidden
+        className={`fixed z-[110] transition-all duration-300 transform origin-bottom-right flex flex-col bg-card shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-border-default/50 overflow-hidden
         ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
         
-        /* Mobile specific styling */
         bottom-0 right-0 w-full h-[85vh] rounded-t-3xl 
         
-        /* Desktop specific styling */
         lg:bottom-6 lg:right-6 lg:w-[380px] lg:h-[550px] lg:max-h-[80vh] lg:rounded-2xl
         `}
       >
@@ -196,10 +194,10 @@ export default function AIChatWidget({ isTransactionPage = false }: { isTransact
         </div>
       </div>
       
-      {/* Mobile Backdrop when open */}
+      {/* Mobile Backdrop when open - z-105, between FAB and chat window. No backdrop-blur to prevent blur on content */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in"
+          className="fixed inset-0 bg-black/40 z-[105] lg:hidden animate-in fade-in"
           onClick={() => setIsOpen(false)}
         />
       )}
