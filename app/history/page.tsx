@@ -28,9 +28,60 @@ export default function HistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data: swrData, isLoading: loading } = useSWR("/api/orders?limit=100", swrFetcher, {
-    onError: () => toast.error("Gagal memuat riwayat transaksi.")
-  });
+  const hasActiveLocalFilters = searchQuery !== "" || filters.product !== "all";
+
+  // Build query string for SWR API request
+  const queryParams = new URLSearchParams();
+  
+  if (hasActiveLocalFilters) {
+    // If filtering by search query or product, get a larger batch so we can filter and paginate on client-side
+    queryParams.append("page", "1");
+    queryParams.append("limit", "200");
+  } else {
+    // Server-side pagination
+    queryParams.append("page", currentPage.toString());
+    queryParams.append("limit", itemsPerPage.toString());
+  }
+
+  // Server-side status filter
+  if (filters.status !== "all") {
+    queryParams.append("status", filters.status === "completed" ? "1" : "0");
+  }
+
+  // Server-side date range filter
+  if (filters.dateRange !== "all") {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let startDate: Date | null = null;
+    if (filters.dateRange === "today") {
+      startDate = todayStart;
+    } else if (filters.dateRange === "7d") {
+      startDate = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (filters.dateRange === "30d") {
+      startDate = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    if (startDate) {
+      queryParams.append("start_date", startDate.toISOString());
+      queryParams.append("end_date", now.toISOString());
+    }
+  }
+
+  const { data: swrData, isLoading: loading, mutate: mutateCurrent } = useSWR(
+    `/api/orders?${queryParams.toString()}`,
+    swrFetcher,
+    {
+      keepPreviousData: true,
+      onError: () => toast.error("Gagal memuat riwayat transaksi.")
+    }
+  );
+
+  const { data: productsData } = useSWR("/api/products", swrFetcher);
+
+  const handleRefresh = () => {
+    mutateCurrent();
+    mutate("/api/dashboard");
+  };
 
   const handleMarkComplete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -53,7 +104,7 @@ export default function HistoryPage() {
       });
       if (response.ok && data.success) {
         toast.success("Pesanan berhasil ditandai lunas.");
-        mutate("/api/orders?limit=100");
+        handleRefresh();
       } else {
         toast.error(data.message || "Gagal mengubah status pesanan.");
       }
@@ -68,12 +119,12 @@ export default function HistoryPage() {
     ? swrData.data.map((o: any) => mapApiOrder(o, 'full'))
     : [];
     
-  // Extract unique products for dropdown
-  const availableProducts = Array.from(new Set(
-    orders.flatMap(o => o.items.map(i => i.product_name))
-  )).filter(Boolean).sort();
+  // Extract products from database catalog for filter dropdown
+  const availableProducts = productsData?.data
+    ? productsData.data.map((p: any) => p.name).filter(Boolean).sort()
+    : [];
 
-  // 1. First apply Filters and Search
+  // Apply filters that need to be processed locally (searchQuery and product)
   const filteredOrders = orders.filter(o => {
     // Search Filter
     if (searchQuery) {
@@ -83,38 +134,20 @@ export default function HistoryPage() {
       if (!matchSearch) return false;
     }
     
-    // Status Filter
-    if (filters.status !== "all" && o.status.toLowerCase() !== filters.status) return false;
-    
     // Product Filter
     if (filters.product !== "all" && !o.items.some(i => i.product_name === filters.product)) return false;
-    
-    // Date Filter (simple frontend check based on parsed date)
-    if (filters.dateRange !== "all") {
-      const orderDate = new Date(o.createdAt);
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      if (filters.dateRange === "today") {
-        if (orderDate < todayStart) return false;
-      } else if (filters.dateRange === "7d") {
-        const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-        if (orderDate < sevenDaysAgo) return false;
-      } else if (filters.dateRange === "30d") {
-        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
-        if (orderDate < thirtyDaysAgo) return false;
-      }
-    }
     
     return true;
   });
 
-  // 2. Then apply Pagination
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const paginatedOrders = filteredOrders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Calculate pages and slices
+  const totalPages = hasActiveLocalFilters
+    ? Math.ceil(filteredOrders.length / itemsPerPage)
+    : Math.ceil((swrData?.total || 0) / itemsPerPage);
+
+  const paginatedOrders = hasActiveLocalFilters
+    ? filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : filteredOrders; // Already filtered and paginated by server
 
   // Reset page when filters change
   React.useEffect(() => {
@@ -172,8 +205,8 @@ export default function HistoryPage() {
                 <tr className="text-[12px] text-text-muted border-b border-border-soft">
                   <th className="pb-4 font-semibold font-sans w-24">Order ID</th>
                   <th className="pb-4 font-semibold font-sans w-1/3">Nama Produk</th>
-                  <th className="pb-4 font-semibold font-sans">Tanggal</th>
-                  <th className="pb-4 font-semibold font-sans">Total Tagihan</th>
+                  <th className="pb-4 font-semibold font-sans whitespace-nowrap">Tanggal</th>
+                  <th className="pb-4 font-semibold font-sans whitespace-nowrap">Total Tagihan</th>
                   <th className="pb-4 font-semibold font-sans">Status</th>
                   <th className="pb-4 font-semibold font-sans text-right">Aksi</th>
                 </tr>
@@ -203,8 +236,8 @@ export default function HistoryPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 text-xs font-semibold text-text-secondary align-middle">{order.date}</td>
-                    <td className="py-4 text-sm font-bold text-primary align-middle">
+                    <td className="py-4 text-xs font-semibold text-text-secondary align-middle whitespace-nowrap">{order.date}</td>
+                    <td className="py-4 text-sm font-bold text-primary align-middle whitespace-nowrap">
                       {order.amount}
                     </td>
                     <td className="py-4 align-middle">
@@ -272,10 +305,7 @@ export default function HistoryPage() {
             setSelectedOrderId(null);
             setEditingOrder(order);
           }}
-          onRefresh={() => {
-            mutate("/api/orders?limit=100");
-            mutate("/api/dashboard");
-          }}
+          onRefresh={handleRefresh}
         />
       )}
 
@@ -283,10 +313,7 @@ export default function HistoryPage() {
         <EditOrderModal 
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
-          onRefresh={() => {
-            mutate("/api/orders?limit=100");
-            mutate("/api/dashboard");
-          }}
+          onRefresh={handleRefresh}
         />
       )}
 
