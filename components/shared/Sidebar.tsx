@@ -12,6 +12,7 @@ const menuItems = [
   { name: "Produk", icon: "inventory_2", href: "/products" },
   { name: "Transaksi", icon: "receipt_long", href: "/transaction" },
   { name: "Riwayat", icon: "history", href: "/history" },
+  { name: "Masukan", icon: "rate_review", href: "/feedback" },
   { name: "Profil", icon: "person", href: "/profile" },
 ];
 
