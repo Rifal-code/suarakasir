@@ -29,7 +29,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const token = getAuthToken();
     if (!token && !isPublicPage) {
       router.replace("/");
-    } else if (token && isPublicPage) {
+    } else if (token && (isLoginPage || isRegisterPage)) {
       router.replace("/dashboard");
     }
   }, [pathname, isPublicPage, router]);
