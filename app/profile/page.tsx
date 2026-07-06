@@ -78,7 +78,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await logoutBackend();
     toast.info("Anda telah keluar dari akun.");
-    router.push("/login");
+    router.push("/");
   };
 
   if (loading) {
