@@ -105,7 +105,10 @@ export const submitFeedback = async (message: string, is_public: boolean) => {
 };
 
 export const getPublicFeedbacks = async () => {
-  return fetchApi("/api/feedback", {
+  const response = await fetch(`${BASE_URL}/api/feedback`, {
     method: "GET",
+    headers: { "Content-Type": "application/json" },
   });
+  const data = await response.json();
+  return { response, data };
 };
