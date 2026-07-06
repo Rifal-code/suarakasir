@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/lib/api";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { getAuthToken, getPublicFeedbacks } from "@/lib/api";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -37,6 +37,10 @@ const slideInLeft: any = {
 export default function WelcomePage() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(true);
+  const [selectedFeedback, setSelectedFeedback] = useState<any | null>(null);
   
   // Parallax for Hero
   const heroRef = useRef(null);
@@ -47,15 +51,32 @@ export default function WelcomePage() {
   const yBg = useTransform(heroScroll, [0, 1], ["0%", "30%"]);
 
   useEffect(() => {
-    // Check if already logged in, redirect to dashboard if so
+    // Check if already logged in to update buttons
     if (getAuthToken()) {
-      router.replace("/dashboard");
+      setIsLoggedIn(true);
     }
 
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
+
+    // Fetch feedbacks
+    const fetchFeedbacks = async () => {
+      try {
+        setIsLoadingFeedbacks(true);
+        const { response, data } = await getPublicFeedbacks();
+        if (response.ok && data.success && Array.isArray(data.data)) {
+          setFeedbacks(data.data.slice(0, 6)); // Ambil max 6
+        }
+      } catch (error) {
+        console.error("Failed to fetch feedbacks:", error);
+      } finally {
+        setIsLoadingFeedbacks(false);
+      }
+    };
+    fetchFeedbacks();
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, [router]);
 
@@ -65,7 +86,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary selection:bg-primary/20 selection:text-primary overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-white text-text-primary selection:bg-primary/20 selection:text-primary overflow-x-hidden font-sans">
       
       {/* Navigation */}
       <motion.nav 
@@ -89,15 +110,23 @@ export default function WelcomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/login" className="hidden sm:block px-5 py-2.5 text-sm font-bold text-text-primary hover:text-primary transition-colors">
-              Masuk
-            </Link>
-            <Link href="/register" className="hidden sm:inline-flex px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-              Coba Gratis
-            </Link>
-            <Link href="/login" className="sm:hidden px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-              Masuk
-            </Link>
+            {isLoggedIn ? (
+              <Link href="/dashboard" className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hidden sm:block px-5 py-2.5 text-sm font-bold text-text-primary hover:text-primary transition-colors">
+                  Masuk
+                </Link>
+                <Link href="/register" className="hidden sm:inline-flex px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                  Coba Gratis
+                </Link>
+                <Link href="/login" className="sm:hidden px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                  Masuk
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </motion.nav>
@@ -108,7 +137,7 @@ export default function WelcomePage() {
           initial="hidden"
           animate="show"
           variants={staggerContainer}
-          className="relative w-full rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-sidebar flex flex-col justify-center min-h-[550px] md:min-h-[700px] shadow-2xl group"
+          className="relative w-full rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-sidebar flex flex-col justify-center min-h-[550px] md:min-h-[700px] group"
         >
           {/* Background Image & Overlay */}
           <div className="absolute inset-0 overflow-hidden">
@@ -135,10 +164,17 @@ export default function WelcomePage() {
             </motion.p>
             
             <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-8">
-              <Link href="/login" className="flex items-center gap-2 text-white font-bold text-lg hover:text-primary transition-colors group/link">
-                Coba Gratis Sekarang
-                <span className="material-symbols-outlined text-sm group-hover/link:-translate-y-1 group-hover/link:translate-x-1 transition-transform">arrow_outward</span>
-              </Link>
+              {isLoggedIn ? (
+                <Link href="/dashboard" className="flex items-center gap-2 text-white font-bold text-lg hover:text-primary transition-colors group/link">
+                  Buka Dashboard
+                  <span className="material-symbols-outlined text-sm group-hover/link:-translate-y-1 group-hover/link:translate-x-1 transition-transform">arrow_outward</span>
+                </Link>
+              ) : (
+                <Link href="/login" className="flex items-center gap-2 text-white font-bold text-lg hover:text-primary transition-colors group/link">
+                  Coba Gratis Sekarang
+                  <span className="material-symbols-outlined text-sm group-hover/link:-translate-y-1 group-hover/link:translate-x-1 transition-transform">arrow_outward</span>
+                </Link>
+              )}
               <button onClick={() => scrollToSection('features')} className="flex items-center gap-2 text-white/80 font-semibold text-lg hover:text-white transition-colors group/link">
                 Lihat Fitur Kami
                 <span className="material-symbols-outlined text-sm group-hover/link:-translate-y-1 group-hover/link:translate-x-1 transition-transform">arrow_outward</span>
@@ -168,7 +204,7 @@ export default function WelcomePage() {
           </motion.div>
 
           {/* Statistics Cutout at Bottom Right */}
-          <motion.div variants={fadeUp} className="absolute bottom-0 right-0 bg-background rounded-tl-[3rem] pl-10 pt-10 hidden lg:block">
+          <motion.div variants={fadeUp} className="absolute bottom-0 right-0 bg-white rounded-tl-[3rem] pl-10 pt-10 hidden lg:block">
              <div className="flex items-center gap-12 pr-4 pb-4">
                 <div>
                   <h3 className="text-4xl font-extrabold text-text-primary mb-1">10x</h3>
@@ -192,7 +228,7 @@ export default function WelcomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="lg:hidden bg-background rounded-[2rem] shadow-sm border border-border-soft p-6 mt-6 flex justify-between"
+          className="lg:hidden bg-white rounded-[2rem] shadow-sm border border-border-soft p-6 mt-6 flex justify-between"
         >
            <div className="text-center">
              <h3 className="text-2xl font-bold text-text-primary">10x</h3>
@@ -211,38 +247,57 @@ export default function WelcomePage() {
 
       {/* Target Audience Section */}
       <section className="py-24 px-6 md:px-12 bg-white relative overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
+          <motion.div 
+            animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} 
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-20 right-1/4 opacity-20 hidden md:block"
+          >
+            <span className="material-symbols-outlined text-6xl text-primary">store</span>
+          </motion.div>
+          <motion.div 
+            animate={{ y: [0, 20, 0], rotate: [0, -5, 0] }} 
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-20 left-1/4 opacity-20 hidden md:block"
+          >
+            <span className="material-symbols-outlined text-6xl text-blue-400">payments</span>
+          </motion.div>
+        </div>
+
         <motion.div 
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
-          className="max-w-7xl mx-auto"
+          className="max-w-7xl mx-auto relative z-10"
         >
-          <div className="text-center md:text-left md:flex justify-between items-end mb-16">
-            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-extrabold text-text-primary max-w-lg leading-tight">
+          <div className="text-center md:text-left md:flex justify-between items-end mb-16 relative">
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-extrabold text-text-primary max-w-xl leading-tight">
               Fokus pada efisiensi,<br/><span className="text-text-secondary font-medium">kami membantu berbagai jenis usaha</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-text-secondary max-w-md mt-4 md:mt-0 md:text-right text-sm leading-relaxed hidden md:block">
+            <motion.p variants={fadeUp} className="text-text-secondary max-w-lg mt-6 md:mt-0 md:text-right text-base md:text-lg leading-relaxed hidden md:block font-medium">
               Solusi yang dirancang khusus untuk memastikan pelayanan yang cepat, tepat, dan dapat diandalkan bagi UMKM di seluruh Indonesia.
             </motion.p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 md:gap-10">
             {[
-              { icon: 'restaurant', name: 'Restoran & Kafe' },
-              { icon: 'storefront', name: 'Retail & Toko' },
-              { icon: 'local_shipping', name: 'Distributor' },
-              { icon: 'build', name: 'Jasa & Servis' },
-              { icon: 'local_cafe', name: 'Kedai Kopi' }
+              { icon: 'restaurant', name: 'Restoran & Kafe', color: 'group-hover:text-orange-500', bg: 'group-hover:bg-orange-50' },
+              { icon: 'storefront', name: 'Retail & Toko', color: 'group-hover:text-blue-500', bg: 'group-hover:bg-blue-50' },
+              { icon: 'local_shipping', name: 'Distributor', color: 'group-hover:text-green-500', bg: 'group-hover:bg-green-50' },
+              { icon: 'build', name: 'Jasa & Servis', color: 'group-hover:text-purple-500', bg: 'group-hover:bg-purple-50' },
+              { icon: 'local_cafe', name: 'Kedai Kopi', color: 'group-hover:text-amber-700', bg: 'group-hover:bg-amber-50' }
             ].map((item, idx) => (
-              <motion.div variants={scaleUp} key={idx} className="flex flex-col items-center gap-4 group">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-background border border-border-soft flex items-center justify-center hover:shadow-xl hover:border-primary/30 transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-primary/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                   <span className="material-symbols-outlined text-4xl md:text-5xl text-text-secondary group-hover:text-primary transition-colors relative z-10" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <motion.div variants={scaleUp} key={idx} className="flex flex-col items-center gap-4 group cursor-pointer">
+                <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full bg-background border border-border-soft flex items-center justify-center hover:shadow-2xl transition-all duration-300 relative overflow-hidden transform group-hover:-translate-y-2 group-hover:scale-105 ${item.bg}`}>
+                   <span className={`material-symbols-outlined text-4xl md:text-5xl text-text-secondary transition-colors relative z-10 ${item.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
                      {item.icon}
                    </span>
                 </div>
-                <span className="font-bold text-sm md:text-base text-text-primary group-hover:text-primary transition-colors">{item.name}</span>
+                <span className="font-bold text-sm md:text-lg text-text-primary group-hover:text-primary transition-colors">{item.name}</span>
               </motion.div>
             ))}
           </div>
@@ -386,46 +441,58 @@ export default function WelcomePage() {
         </motion.div>
       </section>
 
-      {/* Problem Solving / Testimonial */}
+      {/* Feedback / Testimonial */}
       <section className="py-24 px-6 md:px-12 bg-background relative overflow-hidden">
         <motion.div 
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
-          className="max-w-7xl mx-auto flex flex-col-reverse lg:flex-row items-center gap-16"
+          className="max-w-7xl mx-auto"
         >
-          <motion.div variants={slideInLeft} className="flex-1 w-full">
-            <div className="w-full h-80 md:h-[400px] bg-card rounded-[3rem] border border-border-soft shadow-lg relative overflow-hidden flex items-center justify-center p-8 text-center group">
-               {/* Illustration / Graphic placeholder */}
-               <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors"></div>
-               <div className="relative z-10 flex flex-col items-center">
-                 <div className="w-20 h-20 bg-white rounded-full shadow-xl flex items-center justify-center mb-6">
-                    <span className="material-symbols-outlined text-4xl text-primary animate-bounce">record_voice_over</span>
-                 </div>
-                 <h3 className="text-2xl font-bold text-text-primary">&quot;Satu Nasi Goreng Spesial, Dua Es Teh Manis&quot;</h3>
-                 <p className="text-text-secondary mt-3 max-w-sm">Tanpa perlu mengetik, sistem otomatis menambahkan ke keranjang dan menghitung total.</p>
-               </div>
-            </div>
-          </motion.div>
-          <motion.div variants={slideInRight} className="flex-1 space-y-6 text-center md:text-left mt-8 md:mt-0">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary leading-tight">
+          <div className="text-center mb-16">
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-extrabold text-text-primary leading-tight">
               Tinggalkan cara lama,<br/>
               <span className="text-text-secondary font-medium">bantu kasir bekerja lebih cerdas</span>
-            </h2>
-            <div className="md:pl-6 md:border-l-4 md:border-primary mt-8 py-2 text-left">
-              <p className="text-lg md:text-xl text-text-primary font-medium italic">
-                &quot;Dulu saat jam sibuk, kedai kami selalu kewalahan karena kasir harus mencatat pesanan manual satu per satu. Dengan Suara Kasir, kasir tinggal menyebutkan pesanan ke tablet. Nota langsung jadi, dan antrean panjang teratasi!&quot;
-              </p>
-              <div className="mt-6 flex items-center gap-4">
-                <div className="w-12 h-12 bg-sidebar rounded-full flex items-center justify-center text-white font-bold">FA</div>
-                <div className="text-sm">
-                  <p className="font-bold text-text-primary text-base">Fahri Ahmad</p>
-                  <p className="text-text-secondary">Pemilik Kedai Kopi (UMKM)</p>
-                </div>
-              </div>
+            </motion.h2>
+          </div>
+
+          {isLoadingFeedbacks ? (
+            <div className="flex justify-center items-center py-12">
+              <span className="material-symbols-outlined animate-spin text-4xl text-primary">sync</span>
             </div>
-          </motion.div>
+          ) : feedbacks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {feedbacks.map((item, idx) => (
+                <motion.div 
+                  variants={fadeUp} 
+                  key={item.id || idx} 
+                  onClick={() => setSelectedFeedback(item)}
+                  className="bg-white p-8 rounded-3xl shadow-sm border border-border-soft hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col justify-between cursor-pointer group"
+                >
+                  <div className="mb-6">
+                    <span className="material-symbols-outlined text-primary/30 text-5xl mb-4 group-hover:text-primary/50 transition-colors" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
+                    <p className="text-text-primary text-lg italic leading-relaxed line-clamp-4">
+                      &quot;{item.message}&quot;
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 pt-6 border-t border-border-soft mt-auto">
+                    <div className="w-12 h-12 bg-sidebar rounded-full flex items-center justify-center text-white font-bold shrink-0">
+                      {(item.user_name || item.name || "A")[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-text-primary text-base">{item.user_name || item.name || "Pengguna Suara Kasir"}</p>
+                      <p className="text-sm text-text-secondary line-clamp-1">{item.user_description || item.description || "Pemilik UMKM"}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-text-secondary py-12">
+              Belum ada masukan publik. Jadilah yang pertama!
+            </div>
+          )}
         </motion.div>
       </section>
 
@@ -450,9 +517,15 @@ export default function WelcomePage() {
             </motion.div>
             
             <motion.div variants={fadeUp} className="relative z-10">
-              <Link href="/login" className="inline-flex px-8 py-4 bg-white text-sidebar rounded-full font-bold text-sm hover:bg-border-soft hover:scale-105 transition-all">
-                Coba Gratis Sekarang <span className="material-symbols-outlined ml-2 text-lg">arrow_outward</span>
-              </Link>
+              {isLoggedIn ? (
+                <Link href="/dashboard" className="inline-flex px-8 py-4 bg-white text-sidebar rounded-full font-bold text-sm hover:bg-border-soft hover:scale-105 transition-all">
+                  Buka Dashboard <span className="material-symbols-outlined ml-2 text-lg">arrow_outward</span>
+                </Link>
+              ) : (
+                <Link href="/login" className="inline-flex px-8 py-4 bg-white text-sidebar rounded-full font-bold text-sm hover:bg-border-soft hover:scale-105 transition-all">
+                  Coba Gratis Sekarang <span className="material-symbols-outlined ml-2 text-lg">arrow_outward</span>
+                </Link>
+              )}
             </motion.div>
           </div>
 
@@ -479,6 +552,52 @@ export default function WelcomePage() {
         {/* Footer decorations */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       </footer>
+
+      {/* Feedback Modal Overlay */}
+      <AnimatePresence>
+        {selectedFeedback && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedFeedback(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 md:p-10">
+                <button 
+                  onClick={() => setSelectedFeedback(null)}
+                  className="absolute top-6 right-6 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-text-secondary transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+                
+                <span className="material-symbols-outlined text-primary/30 text-6xl mb-6 block" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
+                
+                <p className="text-text-primary text-xl md:text-2xl leading-relaxed italic mb-10 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                  &quot;{selectedFeedback.message}&quot;
+                </p>
+                
+                <div className="flex items-center gap-5 pt-6 border-t border-border-soft">
+                  <div className="w-14 h-14 bg-sidebar rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0 shadow-lg">
+                    {(selectedFeedback.user_name || selectedFeedback.name || "A")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-text-primary text-lg">{selectedFeedback.user_name || selectedFeedback.name || "Pengguna Suara Kasir"}</p>
+                    <p className="text-text-secondary">{selectedFeedback.user_description || selectedFeedback.description || "Pemilik UMKM"}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
