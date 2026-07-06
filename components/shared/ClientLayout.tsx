@@ -17,23 +17,29 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [showVoiceSheet, setShowVoiceSheet] = useState(false);
 
   const isLoginPage = pathname === "/login";
+  const isRegisterPage = pathname === "/register";
+  const isLandingPage = pathname === "/";
+  const isPublicPage = isLoginPage || isRegisterPage || isLandingPage;
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
     const token = getAuthToken();
-    if (!token && !isLoginPage) {
-      router.replace("/login");
-    } else if (token && isLoginPage) {
+    if (!token && !isPublicPage) {
       router.replace("/");
+    } else if (token && isPublicPage) {
+      router.replace("/dashboard");
     }
-  }, [pathname, isLoginPage, router]);
+  }, [pathname, isPublicPage, router]);
 
   // Prevent hydration mismatch by not rendering anything until client mounts
   if (!mounted) {
     return null;
   }
 
-  if (isLoginPage) {
+  if (isPublicPage) {
     return <>{children}</>;
   }
 
