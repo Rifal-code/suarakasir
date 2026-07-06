@@ -322,7 +322,7 @@ export default function WelcomePage() {
               <span className="text-text-secondary font-medium">terjawab dengan AI</span>
             </motion.h2>
             <motion.div variants={slideInLeft} className="flex items-center gap-3">
-              <span className="px-4 py-1.5 bg-sidebar text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-md">IDCamp Challenge 2024</span>
+              <span className="px-4 py-1.5 bg-sidebar text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-md">IDCamp Challenge</span>
             </motion.div>
             <motion.p variants={slideInLeft} className="text-lg text-text-secondary leading-relaxed">
               Dari jutaan UMKM di Indonesia, banyak yang masih terjebak pencatatan manual yang lambat. <b>Suara Kasir</b> hadir menjawab tantangan ini: memanfaatkan <i>Generative AI</i> untuk menciptakan solusi kasir digital yang praktis, otomatis, dan tak perlu keahlian teknis sama sekali.
