@@ -25,7 +25,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     removeAuthToken();
     toast.info("Anda telah keluar dari akun.");
-    router.push("/login");
+    router.push("/");
   };
 
   return (
