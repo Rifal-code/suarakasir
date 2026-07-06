@@ -8,7 +8,7 @@ import { useState } from "react";
 import AlertDialog from "@/components/ui/AlertDialog";
 
 const menuItems = [
-  { name: "Dashboard", icon: "dashboard", href: "/" },
+  { name: "Dashboard", icon: "dashboard", href: "/dashboard" },
   { name: "Produk", icon: "inventory_2", href: "/products" },
   { name: "Transaksi", icon: "receipt_long", href: "/transaction" },
   { name: "Riwayat", icon: "history", href: "/history" },

@@ -11,7 +11,7 @@ export default function BottomBar({ onMicClick }: BottomBarProps) {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Beranda", icon: "home", href: "/" },
+    { name: "Beranda", icon: "home", href: "/dashboard" },
     { name: "Transaksi", icon: "receipt_long", href: "/transaction" },
     { name: "Produk", icon: "inventory_2", href: "/products" },
     { name: "Riwayat", icon: "history", href: "/history" },
