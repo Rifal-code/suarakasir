@@ -74,6 +74,15 @@ export default function TopBar({ onMicClick }: TopBarProps) {
           Order Suara
         </button>
 
+        {/* Mobile Feedback Action (Hidden on desktop since it's in Sidebar) */}
+        <Link
+          href="/feedback"
+          className="flex md:hidden items-center justify-center w-9 h-9 bg-white text-text-primary rounded-full shadow-sm hover:shadow-md hover:bg-gray-50 hover:text-primary active:scale-95 transition-all border border-border-default"
+          title="Beri Masukan"
+        >
+          <span className="material-symbols-outlined text-[20px]">rate_review</span>
+        </Link>
+
         {/* Profile Link Widget */}
         <Link
           href="/profile"
