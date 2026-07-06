@@ -25,7 +25,7 @@
   --color-border-default: #E2EEF0;
   --color-border-soft: color-mix(in srgb, #E2EEF0 60%, #FFFFFF);
 
-  --font-sans: var(--font-inter), sans-serif;
+  --font-sans: var(--font-jakarta), sans-serif;
 }
 
 body {
