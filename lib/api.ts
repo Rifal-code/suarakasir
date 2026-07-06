@@ -96,3 +96,16 @@ export const swrFetcher = async (url: string) => {
   }
   return data;
 };
+
+export const submitFeedback = async (message: string, is_public: boolean) => {
+  return fetchApi("/api/feedback", {
+    method: "POST",
+    body: JSON.stringify({ message, is_public }),
+  });
+};
+
+export const getPublicFeedbacks = async () => {
+  return fetchApi("/api/feedback", {
+    method: "GET",
+  });
+};
