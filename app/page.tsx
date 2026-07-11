@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken, getPublicFeedbacks } from "@/lib/api";
+import { getAuthToken, getPublicFeedbacks, getFeedbackDetail } from "@/lib/api";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 
 const staggerContainer = {
@@ -41,6 +41,13 @@ export default function WelcomePage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [isLoadingFeedbacks, setIsLoadingFeedbacks] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState<any | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [hasMoreFeedbacks, setHasMoreFeedbacks] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const LIMIT = 6;
   
   // Parallax for Hero
   const heroRef = useRef(null);
@@ -61,13 +68,15 @@ export default function WelcomePage() {
     };
     window.addEventListener("scroll", handleScroll);
 
-    // Fetch feedbacks
+    // Fetch initial feedbacks
     const fetchFeedbacks = async () => {
       try {
         setIsLoadingFeedbacks(true);
-        const { response, data } = await getPublicFeedbacks();
+        const { response, data } = await getPublicFeedbacks(1, LIMIT);
         if (response.ok && data.success && Array.isArray(data.data)) {
-          setFeedbacks(data.data.slice(0, 6)); // Ambil max 6
+          setFeedbacks(data.data);
+          setHasMoreFeedbacks(data.data.length === LIMIT && data.total > LIMIT);
+          setPage(2);
         }
       } catch (error) {
         console.error("Failed to fetch feedbacks:", error);
@@ -79,6 +88,43 @@ export default function WelcomePage() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [router]);
+
+  const loadMoreFeedbacks = async () => {
+    if (isFetchingMore || !hasMoreFeedbacks) return;
+    try {
+      setIsFetchingMore(true);
+      const { response, data } = await getPublicFeedbacks(page, LIMIT);
+      if (response.ok && data.success && Array.isArray(data.data)) {
+        setFeedbacks(prev => [...prev, ...data.data]);
+        setHasMoreFeedbacks(feedbacks.length + data.data.length < data.total);
+        setPage(p => p + 1);
+      }
+    } catch (error) {
+      console.error("Failed to load more feedbacks:", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
+  const handleFeedbackClick = async (feedback: any) => {
+    // Tampilkan modal skeleton dulu
+    setSelectedFeedback({ id: feedback.id, isLoading: true });
+    setIsLoadingDetail(true);
+    try {
+      const { response, data } = await getFeedbackDetail(feedback.id);
+      if (response.ok && data.success) {
+        setSelectedFeedback(data.data);
+      } else {
+        // Fallback to basic info if API fails
+        setSelectedFeedback(feedback);
+      }
+    } catch (error) {
+      console.error("Failed to fetch feedback detail:", error);
+      setSelectedFeedback(feedback);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -462,12 +508,17 @@ export default function WelcomePage() {
               <span className="material-symbols-outlined animate-spin text-4xl text-primary">sync</span>
             </div>
           ) : feedbacks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div 
+              initial="hidden"
+              animate="show"
+              variants={staggerContainer}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
               {feedbacks.map((item, idx) => (
                 <motion.div 
                   variants={fadeUp} 
                   key={item.id || idx} 
-                  onClick={() => setSelectedFeedback(item)}
+                  onClick={() => handleFeedbackClick(item)}
                   className="bg-white p-8 rounded-3xl shadow-sm border border-border-soft hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col justify-between cursor-pointer group"
                 >
                   <div className="mb-6">
@@ -487,11 +538,38 @@ export default function WelcomePage() {
                   </div>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
             <div className="text-center text-text-secondary py-12">
               Belum ada masukan publik. Jadilah yang pertama!
             </div>
+          )}
+
+          {hasMoreFeedbacks && feedbacks.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-12 flex justify-center"
+            >
+              <button 
+                onClick={loadMoreFeedbacks}
+                disabled={isFetchingMore}
+                className="px-8 py-3 bg-white border border-border-default text-text-primary rounded-full font-bold hover:bg-gray-50 hover:shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isFetchingMore ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin">sync</span>
+                    Memuat...
+                  </>
+                ) : (
+                  <>
+                    Muat Lebih Banyak
+                    <span className="material-symbols-outlined text-sm">expand_more</span>
+                  </>
+                )}
+              </button>
+            </motion.div>
           )}
         </motion.div>
       </section>
@@ -556,7 +634,7 @@ export default function WelcomePage() {
       {/* Feedback Modal Overlay */}
       <AnimatePresence>
         {selectedFeedback && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -565,33 +643,66 @@ export default function WelcomePage() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full sm:max-w-2xl"
             >
-              <div className="p-8 md:p-10">
-                <button 
-                  onClick={() => setSelectedFeedback(null)}
-                  className="absolute top-6 right-6 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-text-secondary transition-colors"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+              {/* Desktop Close Button (Outside Card) */}
+              <button 
+                onClick={() => setSelectedFeedback(null)}
+                className="hidden sm:flex absolute -top-12 right-0 xl:-right-12 w-10 h-10 bg-white/15 hover:bg-white/25 rounded-full items-center justify-center text-white transition-colors z-50 backdrop-blur-md"
+                aria-label="Tutup"
+              >
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+
+              <div className="bg-white rounded-t-[2rem] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col w-full">
+                <div className="bg-sidebar p-6 sm:p-8 md:p-10 pb-14 sm:pb-16 relative shrink-0">
+                  {/* Mobile Slide Indicator */}
+                  <div className="sm:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full"></div>
+
+                  <span className="material-symbols-outlined text-white/10 text-6xl sm:text-8xl absolute top-8 left-6 sm:top-6" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
+                  
+                  {isLoadingDetail ? (
+                    <div className="animate-pulse space-y-4 relative z-10 pt-4">
+                      <div className="h-4 bg-white/20 rounded w-3/4"></div>
+                      <div className="h-4 bg-white/20 rounded w-full"></div>
+                      <div className="h-4 bg-white/20 rounded w-5/6"></div>
+                    </div>
+                  ) : (
+                    <p className="text-white text-lg sm:text-xl md:text-2xl leading-relaxed italic relative z-10 pt-8 sm:pt-4 max-h-[35vh] sm:max-h-[40vh] overflow-y-auto pr-2 modal-scrollbar">
+                      &quot;{selectedFeedback.message}&quot;
+                    </p>
+                  )}
+                </div>
                 
-                <span className="material-symbols-outlined text-primary/30 text-6xl mb-6 block" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
-                
-                <p className="text-text-primary text-xl md:text-2xl leading-relaxed italic mb-10 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                  &quot;{selectedFeedback.message}&quot;
-                </p>
-                
-                <div className="flex items-center gap-5 pt-6 border-t border-border-soft">
-                  <div className="w-14 h-14 bg-sidebar rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0 shadow-lg">
-                    {(selectedFeedback.user_name || selectedFeedback.name || "A")[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-bold text-text-primary text-lg">{selectedFeedback.user_name || selectedFeedback.name || "Pengguna Suara Kasir"}</p>
-                    <p className="text-text-secondary">{selectedFeedback.user_description || selectedFeedback.description || "Pemilik UMKM"}</p>
-                  </div>
+                <div className="bg-white p-5 sm:p-8 md:p-10 -mt-8 relative z-20 rounded-t-[2rem]">
+                  {isLoadingDetail ? (
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse border-4 border-white shadow-lg"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                        <div className="h-3 bg-gray-100 rounded w-24 animate-pulse"></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-primary to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shrink-0 shadow-lg border-4 border-white">
+                        {(selectedFeedback.user_name || selectedFeedback.name || "A")[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-text-primary text-base sm:text-xl truncate">{selectedFeedback.user_name || selectedFeedback.name || "Pengguna Suara Kasir"}</p>
+                        <p className="text-text-secondary text-xs sm:text-sm font-medium">{selectedFeedback.user_description || selectedFeedback.description || "Pemilik UMKM"}</p>
+                      </div>
+                      {selectedFeedback.created_at && (
+                        <div className="text-[11px] sm:text-xs text-text-secondary font-medium px-2.5 py-1 sm:px-3 sm:py-1.5 bg-background rounded-full border border-border-soft shrink-0">
+                          {new Date(selectedFeedback.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

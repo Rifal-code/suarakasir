@@ -104,11 +104,43 @@ export const submitFeedback = async (message: string, is_public: boolean) => {
   });
 };
 
-export const getPublicFeedbacks = async () => {
-  const response = await fetch(`${BASE_URL}/api/feedback`, {
+export const getPublicFeedbacks = async (page = 1, limit = 10) => {
+  const response = await fetch(`${BASE_URL}/api/feedback?page=${page}&limit=${limit}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });
   const data = await response.json();
   return { response, data };
+};
+
+export const getFeedbackDetail = async (id: string) => {
+  const response = await fetch(`${BASE_URL}/api/feedback/${id}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await response.json();
+  return { response, data };
+};
+
+export const getUserFeedbacks = async (page = 1, limit = 10) => {
+  return fetchApi(`/api/feedback/me?page=${page}&limit=${limit}`, {
+    method: "GET",
+  });
+};
+
+export const updateFeedback = async (id: string, message?: string, is_public?: boolean) => {
+  const body: any = {};
+  if (message !== undefined) body.message = message;
+  if (is_public !== undefined) body.is_public = is_public;
+
+  return fetchApi(`/api/feedback/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+};
+
+export const deleteFeedback = async (id: string) => {
+  return fetchApi(`/api/feedback/${id}`, {
+    method: "DELETE",
+  });
 };
