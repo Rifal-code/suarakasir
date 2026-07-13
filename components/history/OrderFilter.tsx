@@ -117,7 +117,7 @@ export default function OrderFilter({ filters, onChange, availableProducts }: Or
                 { id: "all", label: "Semua Waktu", icon: "calendar_today" },
                 { id: "today", label: "Hari Ini", icon: "today" },
                 { id: "7d", label: "7 Hari Terakhir", icon: "date_range" },
-                { id: "30d", label: "30 Hari Terakhir", icon: "calendar_month" },
+                { id: "30d", label: "Bulan Ini", icon: "calendar_month" },
               ].map((d) => {
                 const isActive = filters.dateRange === d.id;
                 return (

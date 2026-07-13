@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getUserName, fetchApi } from "@/lib/api";
+import Logo from "@/components/shared/Logo";
 
 interface TopBarProps {
   onMicClick?: () => void;
@@ -49,9 +50,7 @@ export default function TopBar({ onMicClick }: TopBarProps) {
       <div className="flex items-center gap-4">
         {/* Mobile Title / Logo area when Sidebar is hidden */}
         <div className="flex lg:hidden items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/20">
-            <span className="material-symbols-outlined text-white text-lg">bolt</span>
-          </div>
+          <Logo className="w-10 h-10 drop-shadow-md" />
           <h1 className="text-xl font-bold text-text-primary tracking-tight">Suara Kasir</h1>
         </div>
 

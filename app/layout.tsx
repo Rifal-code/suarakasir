@@ -14,6 +14,9 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Suara Kasir - AI POS System",
   description: "Kelola keuangan dengan suara",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

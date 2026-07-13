@@ -27,8 +27,8 @@ export default function DashboardHeader({ range, onRangeChange }: DashboardHeade
 
   const options = [
     { value: "7d", label: "7 Hari Terakhir", icon: "today" },
-    { value: "30d", label: "30 Hari Terakhir", icon: "date_range" },
-    { value: "1y", label: "1 Tahun Terakhir", icon: "calendar_month" },
+    { value: "30d", label: "Bulan Ini", icon: "date_range" },
+    { value: "1y", label: "Tahun Ini", icon: "calendar_month" },
   ];
 
   const selectedOption = options.find(opt => opt.value === range) || options[0];
@@ -90,7 +90,7 @@ export default function DashboardHeader({ range, onRangeChange }: DashboardHeade
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute top-full mt-2 right-0 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-full mt-2 left-0 md:left-auto md:right-0 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {options.map((opt) => (
                 <button
                   key={opt.value}

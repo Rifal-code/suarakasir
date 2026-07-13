@@ -6,6 +6,7 @@ import { removeAuthToken } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
 import { useState } from "react";
 import AlertDialog from "@/components/ui/AlertDialog";
+import Logo from "@/components/shared/Logo";
 
 const menuItems = [
   { name: "Dashboard", icon: "dashboard", href: "/dashboard" },
@@ -32,9 +33,7 @@ export default function Sidebar() {
     <>
       <aside className="hidden md:flex flex-col sticky top-0 bg-[#111111] py-6 z-50 text-white border-r border-border-default/10 shadow-2xl transition-all duration-300 md:w-[80px] lg:w-[200px] md:px-3 lg:px-4 h-screen md:items-center lg:items-stretch">
         <div className="mb-8 flex items-center justify-center lg:justify-start gap-2.5 w-full lg:px-1">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
-            <span className="material-symbols-outlined text-white text-[18px]">bolt</span>
-          </div>
+          <Logo className="w-8 h-8 flex-shrink-0 drop-shadow-md" />
           <div className="min-w-0 hidden lg:block">
             <h1 className="text-base font-bold text-white tracking-tight truncate">Suara Kasir</h1>
             <p className="text-[9px] text-text-muted mt-0.5 uppercase tracking-widest">

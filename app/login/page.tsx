@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Logo from "@/components/shared/Logo";
 import { fetchApi, setAuthToken, setUserName, getAuthToken } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
 
@@ -58,9 +59,7 @@ export default function LoginPage() {
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="flex items-center gap-3 mb-6 group">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-              <span className="material-symbols-outlined text-white text-2xl">bolt</span>
-            </div>
+            <Logo className="w-12 h-12 group-hover:scale-105 transition-transform drop-shadow-md" />
             <span className="text-xl font-bold tracking-tight text-text-primary">Suara Kasir</span>
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold text-text-primary">Selamat Datang Kembali</h1>

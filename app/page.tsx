@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getAuthToken, getPublicFeedbacks, getFeedbackDetail } from "@/lib/api";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import Logo from "@/components/shared/Logo";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -143,9 +144,7 @@ export default function WelcomePage() {
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/20">
-              <span className="material-symbols-outlined text-white text-lg">bolt</span>
-            </div>
+            <Logo className="w-10 h-10 drop-shadow-md" />
             <span className="text-xl font-bold tracking-tight">Suara Kasir</span>
           </div>
           
@@ -609,9 +608,7 @@ export default function WelcomePage() {
 
           <motion.div variants={fadeUp} className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-white text-[18px]">bolt</span>
-              </div>
+              <Logo className="w-8 h-8 drop-shadow-sm" />
               <span className="text-lg font-bold tracking-tight">Suara Kasir</span>
             </div>
 
