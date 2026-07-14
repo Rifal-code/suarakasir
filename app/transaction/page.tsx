@@ -6,6 +6,7 @@ import { fetchApi, swrFetcher } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
 import { SkeletonProductCard } from "@/components/ui/SkeletonCards";
 import useSWR, { mutate } from "swr";
+import Image from "next/image";
 
 interface Product {
   id: string;
@@ -253,10 +254,12 @@ export default function TransactionPage() {
                   {/* Image Area */}
                   <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
                     {product.image_url ? (
-                      <img
+                      <Image
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <span className="material-symbols-outlined text-[48px] text-border-default">

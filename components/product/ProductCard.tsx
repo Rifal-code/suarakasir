@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 type ProductCardProps = {
   id: string;
@@ -45,10 +46,12 @@ export default function ProductCard({ id, name, price, imageUrl, stock, onEdit, 
     >
       {/* Image Area */}
       <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
-        <img 
-          src={imageUrl} 
+        <Image 
+          src={imageUrl || "/placeholder.jpg"} 
           alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
         {/* Stock Badge */}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { fetchApi } from "@/lib/api";
 import EditProductModal from "@/components/product/EditProductModal";
 import DeleteProductDialog from "@/components/product/DeleteProductDialog";
@@ -97,11 +98,13 @@ export default function ProductDetailPage() {
         {!imgLoaded && (
           <div className="absolute inset-0 bg-border-default animate-pulse"></div>
         )}
-        <img 
+        <Image 
           src={imageUrl} 
           alt={product.name}
+          fill
+          sizes="100vw"
           onLoad={() => setImgLoaded(true)}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
         {/* Back button overlay */}
         <button
@@ -236,11 +239,13 @@ export default function ProductDetailPage() {
               {!imgLoaded && (
                 <div className="absolute inset-0 bg-border-default animate-pulse"></div>
               )}
-              <img 
+              <Image 
                 src={imageUrl} 
                 alt={product.name}
+                fill
+                sizes="(max-width: 1024px) 100vw, 380px"
                 onLoad={() => setImgLoaded(true)}
-                className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className={`object-cover transition-all duration-500 group-hover:scale-[1.03] ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
               />
               {/* Stock badge */}
               <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide text-white backdrop-blur-md shadow ${stockBadgeBg}`}>

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/components/ui/ToastContext";
+import imageCompression from 'browser-image-compression';
 
 type AddProductModalProps = {
   isOpen: boolean;
@@ -51,8 +52,22 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
       throw new Error("API Key ImgBB belum dikonfigurasi di .env.local");
     }
 
+    // Kompresi Gambar
+    const options = {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 800,
+      useWebWorker: true,
+    };
+    
+    let compressedFile = file;
+    try {
+      compressedFile = await imageCompression(file, options);
+    } catch (error) {
+      console.warn("Gagal mengkompresi gambar, menggunakan file asli", error);
+    }
+
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", compressedFile);
 
     const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: "POST",
