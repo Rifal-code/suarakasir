@@ -28,43 +28,19 @@ export default function HistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const hasActiveLocalFilters = searchQuery !== "" || filters.product !== "all";
+  const hasActiveLocalFilters = searchQuery !== "" || filters.product !== "all" || filters.status !== "all" || filters.dateRange !== "all";
 
   // Build query string for SWR API request
   const queryParams = new URLSearchParams();
   
   if (hasActiveLocalFilters) {
-    // If filtering by search query or product, get a larger batch so we can filter and paginate on client-side
+    // If filtering locally, get a larger batch so we can filter and paginate on client-side
     queryParams.append("page", "1");
     queryParams.append("limit", "200");
   } else {
     // Server-side pagination
     queryParams.append("page", currentPage.toString());
     queryParams.append("limit", itemsPerPage.toString());
-  }
-
-  // Server-side status filter
-  if (filters.status !== "all") {
-    queryParams.append("status", filters.status === "completed" ? "1" : "0");
-  }
-
-  // Server-side date range filter
-  if (filters.dateRange !== "all") {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let startDate: Date | null = null;
-    if (filters.dateRange === "today") {
-      startDate = todayStart;
-    } else if (filters.dateRange === "7d") {
-      startDate = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (filters.dateRange === "30d") {
-      startDate = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
-    }
-    
-    if (startDate) {
-      queryParams.append("start_date", startDate.toISOString());
-      queryParams.append("end_date", now.toISOString());
-    }
   }
 
   const { data: swrData, isLoading: loading, mutate: mutateCurrent } = useSWR(
@@ -124,8 +100,14 @@ export default function HistoryPage() {
     ? productsData.data.map((p: any) => p.name).filter(Boolean).sort()
     : [];
 
-  // Apply filters that need to be processed locally (searchQuery and product)
+  // Apply all filters client-side
   const filteredOrders = orders.filter(o => {
+    // Status Filter
+    if (filters.status !== "all") {
+      const expectedRawStatus = filters.status === "selesai" ? 1 : 0;
+      if (o.rawStatus !== expectedRawStatus) return false;
+    }
+
     // Search Filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -136,6 +118,23 @@ export default function HistoryPage() {
     
     // Product Filter
     if (filters.product !== "all" && !o.items.some(i => i.product_name === filters.product)) return false;
+
+    // Date Range Filter
+    if (filters.dateRange !== "all") {
+      const orderDate = new Date(o.createdAt);
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (filters.dateRange === "today") {
+        if (orderDate < todayStart) return false;
+      } else if (filters.dateRange === "7d") {
+        const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (orderDate < sevenDaysAgo) return false;
+      } else if (filters.dateRange === "30d") {
+        const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (orderDate < thirtyDaysAgo) return false;
+      }
+    }
     
     return true;
   });

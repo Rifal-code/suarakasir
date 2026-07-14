@@ -23,7 +23,7 @@ export default function Dashboard() {
       fetchApi("/api/dashboard"),
       fetchApi(`/api/dashboard/trends?range=${r}`),
       fetchApi(`/api/dashboard/sales?range=${r}`),
-      fetchApi("/api/orders?limit=5"),
+      fetchApi("/api/orders?limit=20"),
       fetchApi(`/api/dashboard/top-products?range=${r}`)
     ]);
 

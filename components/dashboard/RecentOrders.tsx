@@ -66,7 +66,10 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
   // Filter Logic
   const filteredOrders = allOrders.filter(o => {
     // Status Filter
-    if (filters.status !== "all" && o.status.toLowerCase() !== filters.status) return false;
+    if (filters.status !== "all") {
+      const expectedRawStatus = filters.status === "selesai" ? 1 : 0;
+      if (o.rawStatus !== expectedRawStatus) return false;
+    }
     
     // Product Filter
     if (filters.product !== "all" && !o.items.some(i => i.product_name === filters.product)) return false;
