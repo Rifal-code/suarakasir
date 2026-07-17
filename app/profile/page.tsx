@@ -221,7 +221,7 @@ export default function ProfilePage() {
                 onChange={handleChange}
                 placeholder="Jelaskan sedikit tentang toko atau layanan yang Anda sediakan..."
                 rows={3}
-                className="px-5 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner resize-none"
+                className="px-5 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner resize-none custom-scrollbar"
               />
             </div>
 
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                 onChange={handleChange}
                 placeholder="Alamat lengkap toko Anda untuk nota laporan PDF"
                 rows={3}
-                className="px-5 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner resize-none"
+                className="px-5 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner resize-none custom-scrollbar"
               />
             </div>
 

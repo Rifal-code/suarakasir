@@ -124,7 +124,7 @@ export default function RecentOrders({ orders, onRefresh }: RecentOrdersProps) {
           <p className="text-sm">Belum ada pesanan terbaru</p>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-2">
+        <div className="overflow-x-auto pb-2 custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="text-[11px] text-text-muted border-b border-border-soft">
