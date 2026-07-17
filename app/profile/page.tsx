@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const toast = useToast();
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -185,15 +186,27 @@ export default function ProfilePage() {
                   <span className="material-symbols-outlined text-[18px] text-text-muted group-focus-within:text-primary transition-colors">lock</span>
                   Ganti Kata Sandi (Opsional)
                 </label>
-                <input 
-                  type="password" 
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Kosongkan jika tidak ingin diubah"
-                  className="px-5 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
-                  minLength={6}
-                />
+                <div className="relative">
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Kosongkan jika tidak ingin diubah"
+                    className="w-full px-5 pr-12 py-3.5 bg-background border border-border-default rounded-2xl text-[15px] font-medium text-text-primary focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center"
+                    tabIndex={-1}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
 
