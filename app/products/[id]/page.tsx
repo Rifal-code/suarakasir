@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { fetchApi } from "@/lib/api";
+import { getProxiedImageUrl } from "@/lib/imageUtils";
 import EditProductModal from "@/components/product/EditProductModal";
 import DeleteProductDialog from "@/components/product/DeleteProductDialog";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
@@ -67,7 +68,7 @@ export default function ProductDetailPage() {
   }
 
   // — Derived —
-  const imageUrl = product.image_url || "https://placehold.co/600x600?text=No+Image";
+  const imageUrl = getProxiedImageUrl(product.image_url) || "https://placehold.co/600x600?text=No+Image";
   const formattedPrice = `Rp ${Number(product.price).toLocaleString('id-ID')}`;
   const addedDate = new Date(product.created_at || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   

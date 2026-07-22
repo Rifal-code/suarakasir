@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { getProxiedImageUrl } from "@/lib/imageUtils";
 
 type ProductCardProps = {
   id: string;
@@ -47,7 +48,7 @@ export default function ProductCard({ id, name, price, imageUrl, stock, onEdit, 
       {/* Image Area */}
       <div className="relative aspect-[4/3] w-full bg-white border-b border-border-soft flex items-center justify-center overflow-hidden">
         <Image 
-          src={imageUrl || "/placeholder.jpg"} 
+          src={getProxiedImageUrl(imageUrl) || "/placeholder.jpg"} 
           alt={name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

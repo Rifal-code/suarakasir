@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { getProxiedImageUrl } from "@/lib/imageUtils";
 
 type CartItemProps = {
   name: string;
@@ -47,7 +48,7 @@ export default function CartItem({ name, variant, price, imageUrl, initialQty = 
       <div className="w-16 h-16 bg-background rounded-xl overflow-hidden flex-shrink-0 border border-border-soft flex items-center justify-center">
         {imageUrl ? (
           <div className="relative w-full h-full">
-            <Image src={imageUrl} alt={name} fill className="object-cover" sizes="64px" />
+            <Image src={getProxiedImageUrl(imageUrl)} alt={name} fill className="object-cover" sizes="64px" />
           </div>
         ) : (
           <span className="material-symbols-outlined text-[24px] text-border-default">inventory_2</span>
